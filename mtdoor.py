@@ -2,6 +2,7 @@ import sys, time, subprocess
 
 import requests
 from loguru import logger as log
+from rich.pretty import pprint
 import meshtastic
 from meshtastic.serial_interface import SerialInterface
 
@@ -101,17 +102,17 @@ def chat_gpt(msg: str, node: int) -> str:
 commands = [
     # ("about", "not much info", about),
     ("ping", "pong", ping),
-    ("fortune", "crack open a cookie", fortune),
+    ("fortune", "open a cookie", fortune),
     ("forecast", "LBK county", forecast),
     ("positions", f"last {POSITION_LOG_SIZE} you sent", position_log),
-    ("sun", "position of the sun", get_sun_position),
-    ("moon", "phase of the moon", get_moon_phase),
-    ("gpt", "'gpt <query>' to ask the oracle", chat_gpt),
+    ("sun", "sun position", get_sun_position),
+    ("moon", "moon phase", get_moon_phase),
+    ("llm", "'llm <query>' for ChatGPT, 'llm !clear' to reset", chat_gpt),
 ]
 
 
 def help_message() -> str:
-    msg = "- commands -\n" + "\n".join(
+    msg = "What's up? Try these commands:\n\n" + "\n".join(
         [f"{cmd}: { desc }" for (cmd, desc, handler) in commands]
     )
     return msg
@@ -129,6 +130,11 @@ def get_command_handler(msg: str):
 
 
 def on_text(packet, interface):
+    me = interface.getMyUser()['id']
+    if packet['toId'] != me:
+        log.debug("Skipping, not for us.")
+        return
+
     node = packet["fromId"]
     msg: str = packet["decoded"]["payload"].decode("utf-8")
 
@@ -173,5 +179,5 @@ if __name__ == "__main__":
             sys.stdout.flush()
             time.sleep(1)
     except KeyboardInterrupt:
-        log.info("Bye")
+        log.info(f"Goodbye. We used {gpt.token_count} OpenAI tokens.")
         iface.close()
