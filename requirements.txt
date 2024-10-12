@@ -1,0 +1,5 @@
+meshtastic
+rich
+loguru
+skyfield
+openai
