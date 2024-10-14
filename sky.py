@@ -90,22 +90,23 @@ def moon_phase():
 
     # Phases of the Moon based on the angle
     if angle < 1:
-        phase = f"New Moon 🌑 ({angle:.1f}°)"
+        phase = f"New Moon 🌑"
     elif angle < 45:
-        phase = f"Waxing Crescent 🌒 ({angle:.1f}°)"
+        phase = f"Waxing Crescent 🌒"
     elif angle < 90:
-        phase = f"First Quarter 🌓 ({angle:.1f}°)"
+        phase = f"First Quarter 🌓"
     elif angle < 135:
-        phase = f"Waxing Gibbous 🌔 ({angle:.1f}°)"
+        phase = f"Waxing Gibbous 🌔"
     elif angle < 180:
-        phase = f"Full Moon 🌕 ({angle:.1f}°)"
+        phase = f"Full Moon 🌕"
     elif angle < 225:
-        phase = f"Waning Gibbous 🌖 ({angle:.1f}°)"
+        phase = f"Waning Gibbous 🌖"
     elif angle < 270:
-        phase = f"Last Quarter 🌗 ({angle:.1f}°)"
+        phase = f"Last Quarter 🌗"
     elif angle < 315:
-        phase = f"Waning Crescent 🌘 ({angle:.1f}°)"
+        phase = f"Waning Crescent 🌘"
     else:
-        phase = f"New Moon 🌑 ({angle:.1f}°)"
+        phase = f"New Moon 🌑"
 
-    return phase
+    return phase + f" ({angle:.1f}°)"
+
