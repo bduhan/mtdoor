@@ -75,7 +75,7 @@ def position_log(msg: str, node: int) -> str:
     for lat, lng in POSITION_LOG[node]:
         response += f"{lat}, {lng}\n"
 
-    return response
+    return response.strip()
 
 
 def get_sun_position(msg: str, node: int) -> str:
