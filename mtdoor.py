@@ -29,10 +29,10 @@ def fortune(msg: str, node: int) -> str:
             ["fortune", "-a", "-s"], capture_output=True, text=True, check=True
         )
         fortune = response.stdout.strip()
-        return fortune
     except:
-        log.exception(f"'fortune' command failed")
-        return
+        fortune = "'fortune' command failed"
+        log.exception(fortune)
+    return fortune
 
 
 def forecast(msg: str, node: int) -> str:
@@ -51,7 +51,7 @@ def forecast(msg: str, node: int) -> str:
         if len(reply+ proposed_addition) > 200:
             break
         else:
-            reply+= proposed_addition
+            reply += proposed_addition
 
     return reply.strip()
 
