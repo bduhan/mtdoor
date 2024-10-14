@@ -37,23 +37,23 @@ def fortune(msg: str, node: int) -> str:
 
 def forecast(msg: str, node: int) -> str:
     # Lubbock County
-    request = requests.get("https://api.weather.gov/zones/county/TXZ035/forecast")
-    request.raise_for_status()
-    data = request.json()
+    response = requests.get("https://api.weather.gov/zones/county/TXZ035/forecast")
+    response.raise_for_status()
+    data = response.json()
     forecast = data["properties"]["periods"]
 
     # return the first periods that fit in our message size
 
-    response = ""
+    reply = ""
 
     for p in forecast:
         proposed_addition = f"({p['name']}) {p['detailedForecast']}\n"
-        if len(response + proposed_addition) > 200:
+        if len(reply+ proposed_addition) > 200:
             break
         else:
-            response += proposed_addition
+            reply+= proposed_addition
 
-    return response.strip()
+    return reply.strip()
 
 
 POSITION_LOG: dict[list] = {}  # key is node, value is list of last positions
