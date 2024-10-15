@@ -11,6 +11,7 @@ from pubsub import pub
 from sky import solar_position, moon_phase
 from llm import ChatGPT
 
+
 ## services ##
 
 
@@ -99,6 +100,7 @@ def chat_gpt(msg: str, node: int) -> str:
 
 ## commands ##
 
+
 commands = [
     # ("about", "not much info", about),
     ("ping", "pong", ping),
@@ -167,8 +169,6 @@ def on_position(packet, interface):
 
 
 if __name__ == "__main__":
-    # opening the interface and looping forever allows pubsub messages from the radio
-    # to start
     iface = SerialInterface()
     pub.subscribe(on_text, "meshtastic.receive.text")
     pub.subscribe(on_position, "meshtastic.receive.position")
