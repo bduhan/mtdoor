@@ -9,7 +9,7 @@ from meshtastic.serial_interface import SerialInterface
 from pubsub import pub
 
 from sky import solar_position, moon_phase
-from gpt import ChatGPT
+from llm import ChatGPT
 
 ## services ##
 
