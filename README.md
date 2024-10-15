@@ -1,6 +1,8 @@
 ## mtdoor - Meshtastic Door
 
-Quick hack of a bot for Meshtastic. Keyword based commands, it responds only to DMs.
+Quick hack of a bot for Meshtastic. Responds to keyword commands sent in DMs.
+
+In the spirit of [doors on bulletin board systems](https://en.wikipedia.org/wiki/Door_\(bulletin_board_system\)).
 
 Current features:
 - ping
@@ -11,5 +13,8 @@ Current features:
 - gateway to ChatGPT
 - very little error checking or concurrency testing
 
-Assumes `fortune` is installed and Internet connectivity for NOAA forecast and ChatGPT (set `OPENAI_API_KEY` environment variable).
+Assumes:
+- `fortune` is installed
+- Internet connectivity for the [NWS/NOAA forecast API](https://www.weather.gov/documentation/services-web-api)
+- `OPENAI_API_KEY` environment variable for ChatGPT
 
