@@ -69,8 +69,11 @@ def clean_position_log():
 
 
 def position_log(msg: str, node: int) -> str:
+    clean_position_log()
+
     if node not in POSITION_LOG:
         return "No positions found. Share one with me."
+
     response = "Last positions: (newest first)\n"
 
     for lat, lng in POSITION_LOG[node]:
