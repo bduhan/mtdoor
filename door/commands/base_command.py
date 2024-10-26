@@ -70,7 +70,6 @@ class BaseCommand:
         method takes positional arguments (message, node)
         """
         thread = threading.Thread(target=method, args=(message, node))
-        log.debug("thread.start")
         thread.start()
     
     def get_node(self, node: str) -> Node:
