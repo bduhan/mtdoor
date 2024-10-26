@@ -1,4 +1,5 @@
 import threading
+from meshtastic.mesh_interface import MeshInterface
 from collections.abc import Callable
 
 from loguru import logger as log
@@ -36,6 +37,9 @@ class BaseCommand:
 
     # pubsub topic handlers send responses to - set by DoorManager
     dm_topic: str
+
+    # Meshtastic interface
+    interface: MeshInterface
 
     def load(self):
         """

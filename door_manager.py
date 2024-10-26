@@ -1,23 +1,61 @@
 import signal
+from meshtastic.mesh_interface import MeshInterface
+
 from loguru import logger as log
 
 from pubsub import pub
 
-from commands import load_commands, BaseCommand, CommandRunError, CommandActionNotImplemented
+from commands import BaseCommand, CommandLoadError, CommandRunError, CommandActionNotImplemented
 
 
 class DoorManager:
     # use this topic to send response messages
     dm_topic: str = "mtdoor.send.text"
 
-    def __init__(self, interface):
+    def __init__(self, interface: MeshInterface):
         self.interface = interface
         self.me = interface.getMyUser()["id"]
 
-        self.commands = load_commands(self.dm_topic)
+        # self.commands = load_commands(self.dm_topic)
+        # keep track of the commands added, don't let duplicates happen
+        self.commands = []
         pub.subscribe(self.on_text, "meshtastic.receive.text")
         pub.subscribe(self.send_dm, self.dm_topic)
         log.info(f"MTDoor is connected to {self.me}")
+    
+    def add_command(self, command: BaseCommand):
+        if not hasattr(command, "command"):
+            raise CommandLoadError("No 'command' property on {command}")
+        
+        cmd: BaseCommand
+        for cmd in self.commands:
+            if cmd.command == command.command:
+                raise CommandLoadError("Command already loaded")
+        
+        # instantiate and set some properties
+        cmd = command()
+        cmd.dm_topic = self.dm_topic
+        cmd.interface = self.interface
+
+        # call "load" on the command class
+        try:
+            log.debug(f"Loading '{cmd.command}'..")
+            cmd.load()
+        except CommandActionNotImplemented:
+            # it's ok if they don't implement a load method
+            pass
+        except CommandLoadError:
+            log.warning(f"Command {command.command} could not load.")
+            return
+        except:
+            log.exception(f"Failed to load {command.command}")
+            return
+        
+        self.commands.append(cmd)
+
+    def add_commands(self, commands: list[BaseCommand]):
+        for cmd in commands:
+            self.add_command(cmd)
 
     def get_command_handler(self, message: str):
         cmd: BaseCommand

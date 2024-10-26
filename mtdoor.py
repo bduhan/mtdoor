@@ -7,10 +7,13 @@ from meshtastic.serial_interface import SerialInterface
 
 from door_manager import DoorManager
 
+from commands import all_commands
+
 
 # TODO handle other interface types
 iface = SerialInterface()
 door = DoorManager(iface)
+door.add_commands(all_commands)
 
 
 # handle the OS shutting us down
