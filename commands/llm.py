@@ -2,18 +2,25 @@ from openai import OpenAI
 from rich.pretty import pprint
 from loguru import logger as log
 
+from .base import BaseCommand, CommandRunError, CommandLoadError
+
 SYSTEM_PROMPT = """Respond only as Marvin the Robot from Hitchhiker's Guide to the Galaxy. Keep answers under 190 characters."""
+MAX_TOKENS = 45
 
 MODEL = "gpt-3.5-turbo"
 
 
-class ChatGPT:
+class ChatGPT(BaseCommand):
+    command = "llm"
+    description = f"Talk to {MODEL}"
+    help = f"""'llm !clear' to clear conversation context."""
+
     conversations: dict[list]
     token_count: int
 
-    def __init__(self, max_tokens=45):
+    def load(self):
         self.conversations = {}
-        self.max_tokens = max_tokens
+        self.max_tokens = MAX_TOKENS
         self.client = OpenAI()
         self.token_count = 0
 
@@ -26,7 +33,7 @@ class ChatGPT:
 
         self.conversations[node].append({"role": "user", "content": message})
 
-    def chat(self, node: str, input_message: str) -> str:
+    def chat(self, input_message: str, node: str) -> None:
         if input_message[:6].lower() == "!clear":
             self.reset(node)
             return "LLM conversation cleared."
@@ -44,4 +51,10 @@ class ChatGPT:
 
         self.conversations[node].append({"role": "assistant", "content": answer})
 
-        return answer
+        self.send_dm(answer, node)
+    
+    def invoke(self, msg: str, node: str) -> None:
+        self.run_in_thread(self.chat, msg, node)
+    
+    def shutdown(self):
+        log.info(f"LLM used {self.token_count} tokens.")

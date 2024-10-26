@@ -3,3 +3,5 @@ rich
 loguru
 skyfield
 openai
+feedparser
+pytz
