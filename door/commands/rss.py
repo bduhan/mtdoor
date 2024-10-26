@@ -23,6 +23,9 @@ FEEDS = [
         short_name="wiki",
         url="https://en.wikinews.org/w/index.php?title=Special:NewsFeed&feed=rss&categories=Published&notcategories=No%20publish%7CArchived%7cAutoArchived%7cdisputed&namespace=0&count=15&ordermethod=categoryadd&stablepages=only",
     ),
+    Feed(name="Hackaday", short_name="hack", url="https://hackaday.com/feed/"),
+    Feed(name="2600.com", short_name="2600", url="http://www.2600.com/rss.xml"),
+    Feed(name="Yahoo News", short_name="yahoo", url="https://www.yahoo.com/news/rss"),
 ]
 
 
@@ -49,27 +52,38 @@ class RSS(BaseCommand):
         self.feed_names = [f.short_name for f in FEEDS]
 
     def invoke(self, msg: str, node: str) -> str:
-        feed: Feed
+        self.run_in_thread(self.fetch, msg, node)
+
+    def fetch(self, msg: str, node: str):
         # strip invocation command
         msg = msg[len(self.command) :].lower().lstrip().rstrip()
-        log.debug(f"[{msg}]")
 
         # return a list
         if msg[:4] == "list":
             return self.list_feeds()
 
+        # search for the requested feed
+        feed: Feed
+        found_feed: Feed = None
         for feed in FEEDS:
             if feed.short_name in msg:
-                titles = get_feed_titles(feed)
-                return self.build_reply(titles)
-        return f"Feed not found. Send '{self.command} list' to see a list."
+                found_feed = feed
+                break
+
+        if found_feed:
+            titles = get_feed_titles(feed)
+            reply = self.build_reply(titles)
+        else:
+            reply = f"Feed not found. {self.list_feeds()}"
+
+        self.send_dm(reply, node)
 
     def list_feeds(self) -> str:
         feed: Feed
         return "Installed RSS feeds:\n\n" + "\n".join(
             [f"{feed.short_name}: {feed.name}" for feed in FEEDS]
         )
-    
+
     def build_reply(self, titles: list[str]) -> str:
         reply = ""
         for t in titles:
