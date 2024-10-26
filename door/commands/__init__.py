@@ -10,5 +10,6 @@ from .rss import RSS
 from .async_test import AsyncTest
 from .llm import ChatGPT
 from .astro import Astro
+from .me import AboutMe
 
-all_commands = [Ping, Fortune, RSS, Weather, AsyncTest, ChatGPT, Astro]
+all_commands = [Ping, Fortune, RSS, Weather, AsyncTest, ChatGPT, Astro, AboutMe]
