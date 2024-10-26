@@ -12,9 +12,10 @@ class AboutMe(BaseCommand):
         log.debug(msg)
 
 
-        reply = f"""Names: {u.user.longName} ({u.user.shortName})
+        reply = f"""Name: {u.user.longName} ({u.user.shortName})
 Last heard: {u.last_heard.strftime("%Y-%m-%d %H:%M")}
-SNR: {u.snr}, Hops: {u.hopsAway}"""
+SNR: {u.snr}
+Hops: {u.hopsAway}"""
 
         if u.position:
              reply += f"""
