@@ -170,8 +170,8 @@ class Weather(BaseCommand):
 
     def load(self):
         # TODO move these to configuration or ask the Meshtastic node
-        self.latitude = float(os.getenv("MT_LATITUDE", 33.548786))
-        self.longitude = float(os.getenv("MT_LONGITUDE", -101.905093))
+        self.latitude = float(os.getenv("DEFAULT_LATITUDE", 33.548786))
+        self.longitude = float(os.getenv("DEFAULT_LONGITUDE", -101.905093))
 
         # loading fails if we can't reach the weather API
         try:
@@ -180,8 +180,6 @@ class Weather(BaseCommand):
         except:
             # log.exception()
             raise CommandLoadError("Failed to reach api.weather.gov")
-        # log.debug(self.point_info.model_dump())
-        # log.debug(self.station_info.model_dump())
 
     def invoke(self, msg: str, node: str) -> str:
         if "alerts" in msg.lower():
@@ -191,8 +189,7 @@ class Weather(BaseCommand):
         else:
             return self.forecast()
 
-    def forecast(self, county: str = "TXZ035"):
-        # Lubbock County
+    def forecast(self):
         try:
             forecast_periods: list[ForecastItem] = get_forecast(
                 self.point_info.forecast
