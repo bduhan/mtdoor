@@ -1,30 +1,22 @@
-## mtdoor - Meshtastic Door
+# A Meshtastic Door Bot
 
-Quick hack of a bot for Meshtastic. Responds to keyword commands sent in DMs.
+A bot for Meshtastic activities. Responds to keyword commands sent in DMs. Built in the spirit of [doors in bulletin board systems](https://en.wikipedia.org/wiki/Door_\(bulletin_board_system\)).
 
-In the spirit of [doors on bulletin board systems](https://en.wikipedia.org/wiki/Door_\(bulletin_board_system\)).
+Current activities include: ping, node info, fortunes, RSS headlines, weather, sun/moon position, and ChatGPT.
 
-Current features:
-- ping
-- fortunes
-- weather forecast
-- personalized node position log (not persistent)
-- sun and moon positions
-- gateway to ChatGPT
-- very little error checking or concurrency testing
+Users can DM the bot anything to get started.
+- `help` lists loaded commands.
+- `help <command>` provides detail about a command.
 
-Assumes:
-- `fortune` is installed (`sudo apt install fortune-mod fortunes`)
-- Internet for the [NWS/NOAA forecast API](https://www.weather.gov/documentation/services-web-api)
-- Internet the first time you use the sun and moon functions
-- Internet and `OPENAI_API_KEY` environment variable set for ChatGPT
 
-### Installation
+## Installation
 
-This should work on any machine that can run the [Meshtastic Python](https://github.com/meshtastic/python) library.
+This should work on any machine that can run the [Meshtastic Python](https://github.com/meshtastic/python) library. Presently USB-connected nodes are supported.
+
 
 ```bash
-sudo apt install fortune-mod fortunes python3-virtualenv python3-pip
+# Debian/Ubuntu
+sudo apt install python3-virtualenv python3-pip
 
 virtualenv mesh_env
 
@@ -38,8 +30,21 @@ pip install -r requirements.txt
 ### Running
 
 ```bash
+# set this environment variable if you are using ChatGPT
 export OPENAI_API_KEY=...
 
+# for location services, in case we haven't seen node position
+export DEFAULT_LATITUDE=...
+export DEFAULT_LONGITUDE=...
+
+# run it
 python mtdoor.py
 ```
+
+
+### Command Handlers
+
+A modular command handling system makes it easy to write new commands, perform longer-running tasks in a background thread, access information about your users, and persist data. Lifecycle events for each command include: load, invoke, and shutdown.
+
+Commands should check requirements to operate (e.g. files, Internet, API key) in their `.load()` method and raise `CommandLoadError` to be ignored.
 
