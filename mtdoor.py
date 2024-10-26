@@ -6,8 +6,11 @@ from meshtastic.serial_interface import SerialInterface
 from door.manager import DoorManager
 from door.commands import all_commands
 
+# TODO add some kind of configuration
 
-# TODO handle other interface types
+# TODO make logs configurable
+
+# TODO support BLE and TCP interfaces
 iface = SerialInterface()
 door = DoorManager(iface)
 door.add_commands(all_commands)
