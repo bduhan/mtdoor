@@ -15,7 +15,7 @@ import requests
 import pytz
 from pydantic import BaseModel, HttpUrl
 
-from .base import BaseCommand, CommandLoadError, CommandRunError
+from .base_command import BaseCommand, CommandLoadError, CommandRunError
 
 NWS_API = "https://api.weather.gov"
 

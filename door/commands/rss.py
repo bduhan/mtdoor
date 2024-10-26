@@ -5,7 +5,7 @@ import feedparser
 from loguru import logger as log
 from pydantic import BaseModel, HttpUrl
 
-from .base import BaseCommand, CommandLoadError, CommandRunError
+from .base_command import BaseCommand, CommandLoadError, CommandRunError
 
 
 class Feed(BaseModel):

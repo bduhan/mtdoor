@@ -2,7 +2,7 @@ from openai import OpenAI
 from rich.pretty import pprint
 from loguru import logger as log
 
-from .base import BaseCommand, CommandRunError, CommandLoadError
+from .base_command import BaseCommand, CommandRunError, CommandLoadError
 
 SYSTEM_PROMPT = """Respond only as Marvin the Robot from Hitchhiker's Guide to the Galaxy. Keep answers under 190 characters."""
 MAX_TOKENS = 45

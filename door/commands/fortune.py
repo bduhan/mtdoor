@@ -3,7 +3,7 @@ from shutil import which
 
 from loguru import logger as log
 
-from .base import BaseCommand, CommandRunError, CommandLoadError
+from .base_command import BaseCommand, CommandRunError, CommandLoadError
 
 class Fortune(BaseCommand):
     command = "fortune"

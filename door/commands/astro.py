@@ -4,16 +4,14 @@ import numpy as np
 
 from loguru import logger as log
 
-from .base import BaseCommand, CommandLoadError
+from .base_command import BaseCommand, CommandLoadError
 
 from skyfield.api import load, Topos
 
-LUBBOCK_COUNTY_CENTER = (33.5661, -101.9164)
-
 
 def solar_position(
-    latitude: float = LUBBOCK_COUNTY_CENTER[0],
-    longitude: float = LUBBOCK_COUNTY_CENTER[1],
+    latitude,
+    longitude,
 ) -> tuple[int, int]:
     """
     return is (altitude, azimuth) of the sun in degrees
@@ -118,21 +116,35 @@ class Astro(BaseCommand):
     longitude: float
 
     def load(self):
-        self.latitude = float(os.getenv("MT_LATITUDE", 33.548786))
-        self.longitude = float(os.getenv("MT_LONGITUDE", -101.905093))
+        self.latitude = float(os.getenv("DEFAULT_LATITUDE", 33.548786))
+        self.longitude = float(os.getenv("DEFAULT_LONGITUDE", -101.905093))
 
         # run each function to make sure required resources are loaded
         try:
-            solar_position()
+            solar_position(self.latitude, self.longitude)
             moon_phase()
         except:
+            log.exception("Failed to load Astro")
             raise CommandLoadError()
 
     def invoke(self, msg: str, node: str) -> str:
+
         if "sun" in msg.lower():
-            altitude, azimuth = solar_position(self.latitude, self.longitude)
+            user = self.get_node(node)
+
+            latitude = self.latitude
+            longitude = self.longitude
+
+            if user and user.position:
+                latitude = user.position.latitude
+                longitude = user.position.longitude
+                log.debug(f"using user position: {user.position}")
+            
+            altitude, azimuth = solar_position(latitude, longitude)
             return f"🌞 altitude: {altitude}°, azimuth: {azimuth}°"
+
         elif "moon" in msg.lower():
-            return moon_phase(self.latitude, self.longitude)
+            return moon_phase(latitude, longitude)
+
         else:
             return "Unknown sub-command."

@@ -6,6 +6,8 @@ from loguru import logger as log
 from pubsub import pub
 
 
+from ..models import Node
+
 class CommandRunError(Exception):
     pass
 
@@ -70,3 +72,10 @@ class BaseCommand:
         thread = threading.Thread(target=method, args=(message, node))
         log.debug("thread.start")
         thread.start()
+    
+    def get_node(self, node: str) -> Node:
+        """
+        try to fetch the detailed node information in meshtastic.interface[node]
+        """
+        if node in self.interface.nodes:
+            return Node(**self.interface.nodes[node])

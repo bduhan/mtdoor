@@ -10,7 +10,7 @@ import sqlite3
 from pydantic import BaseModel
 from loguru import logger as log
 
-from .base import BaseCommand, CommandLoadError, CommandRunError
+from .base_command import BaseCommand, CommandLoadError, CommandRunError
 
 DDL = """
 

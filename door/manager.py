@@ -1,12 +1,8 @@
-import signal
 from meshtastic.mesh_interface import MeshInterface
-
 from loguru import logger as log
-
 from pubsub import pub
 
-from commands import BaseCommand, CommandLoadError, CommandRunError, CommandActionNotImplemented
-
+from .commands import BaseCommand, CommandLoadError, CommandRunError, CommandActionNotImplemented
 
 class DoorManager:
     # use this topic to send response messages
