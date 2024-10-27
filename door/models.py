@@ -7,6 +7,7 @@ from typing import Optional
 from pydantic import BaseModel, computed_field
 import pytz
 
+
 class UserInfo(BaseModel):
     id: str
     longName: Optional[str] = None
@@ -14,6 +15,7 @@ class UserInfo(BaseModel):
     macaddr: Optional[str] = None
     hwModel: Optional[str] = None
     publicKey: Optional[str] = None
+
 
 class Position(BaseModel):
     latitude: float
@@ -26,6 +28,7 @@ class Position(BaseModel):
     def timestamp(self) -> datetime.datetime:
         return datetime.datetime.fromtimestamp(self.time, pytz.UTC)
 
+
 class DeviceMetrics(BaseModel):
     batteryLevel: Optional[int] = None
     voltage: Optional[float] = None
@@ -35,7 +38,7 @@ class DeviceMetrics(BaseModel):
 
 
 class Node(BaseModel):
-    num: int 
+    num: int
     snr: Optional[float] = None
     hopsAway: Optional[int] = None
     lastHeard: Optional[int] = None
