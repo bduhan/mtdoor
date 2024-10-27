@@ -11,7 +11,7 @@ Users can DM the bot anything to get started.
 
 ## Installation
 
-This should work on any machine that can run the [Meshtastic Python](https://github.com/meshtastic/python) library. Presently USB-connected nodes are supported.
+This should work on any computer compatible with the [Meshtastic Python](https://github.com/meshtastic/python) library. Presently USB-connected nodes are supported.
 
 
 ```bash
