@@ -1,4 +1,4 @@
-import sys, time, signal
+import sys, time, signal, sys 
 
 from loguru import logger as log
 from meshtastic.serial_interface import SerialInterface
@@ -20,6 +20,7 @@ door.add_commands(all_commands)
 def shutdown(*args):
     door.shutdown()
     iface.close()
+    sys.exit(0)
 
 
 signal.signal(signal.SIGINT, shutdown)
