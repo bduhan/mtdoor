@@ -5,7 +5,7 @@ import feedparser
 from loguru import logger as log
 from pydantic import BaseModel, HttpUrl
 
-from .base_command import BaseCommand, CommandLoadError, CommandRunError
+from .base_command import BaseCommand
 
 
 class Feed(BaseModel):
@@ -60,7 +60,7 @@ class RSS(BaseCommand):
 
         # return a list
         if msg[:4] == "list":
-            return self.list_feeds()
+            return self.send_dm(self.list_feeds(), node)
 
         # search for the requested feed
         feed: Feed
