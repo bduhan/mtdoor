@@ -88,7 +88,6 @@ class RSS(BaseCommand):
         reply = ""
         for t in titles:
             proposed = f"{t}\n\n"
-            # print(len(proposed))
             if len(reply + proposed) > 200:
                 break
             else:
