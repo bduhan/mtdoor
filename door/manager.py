@@ -86,12 +86,14 @@ class DoorManager:
         """build a help message for the given command
         we may or may not have 'description' or 'help' filled in
         """
-        if command.description and command.help:
-            return command.description + "\n\n" + command.help
-        elif command.description and not command.help:
-            return command.description
-        elif not command.description and command.help:
-            return command.help
+        description = getattr(command, "description", None)
+        help = getattr(command, "help", None)
+        if description and help:
+            return description + "\n\n" + help
+        elif description and not help:
+            return description
+        elif not description and help:
+            return help
         else:
             return "No help for this command"
 
