@@ -128,23 +128,23 @@ class Astro(BaseCommand):
             raise CommandLoadError()
 
     def invoke(self, msg: str, node: str) -> str:
+        # in case we need position
+        latitude = self.latitude
+        longitude = self.longitude
+
+        user = self.get_node(node)
+
+        if user and user.position and user.position.latitude and user.position.longitude:
+            latitude = user.position.latitude
+            longitude = user.position.longitude
+            log.debug(f"user position: {round(latitude, 5)}, {round(longitude, 5)}")
 
         if "sun" in msg.lower():
-            user = self.get_node(node)
-
-            latitude = self.latitude
-            longitude = self.longitude
-
-            if user and user.position:
-                latitude = user.position.latitude
-                longitude = user.position.longitude
-                log.debug(f"using user position: {user.position}")
-            
             altitude, azimuth = solar_position(latitude, longitude)
             return f"🌞 altitude: {altitude}°, azimuth: {azimuth}°"
 
         elif "moon" in msg.lower():
-            return moon_phase(latitude, longitude)
+            return moon_phase()
 
         else:
             return "Unknown sub-command."
