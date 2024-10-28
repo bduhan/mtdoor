@@ -20,8 +20,8 @@ class UserInfo(BaseModel):
 class Position(BaseModel):
     latitude: float
     longitude: float
-    altitude: Optional[int]
-    time: Optional[int]
+    altitude: Optional[int] = None
+    time: Optional[int] = None
 
     @computed_field
     @property
@@ -37,7 +37,7 @@ class DeviceMetrics(BaseModel):
     uptimeSeconds: Optional[int] = None
 
 
-class Node(BaseModel):
+class NodeInfo(BaseModel):
     num: int
     snr: Optional[float] = None
     hopsAway: Optional[int] = None
