@@ -11,28 +11,14 @@ def format_node_list(nodes: list[NodeInfo]) -> str:
     response = ""
     n: NodeInfo
     for n in nodes:
-        r = f"{n.last_heard.strftime('%m-%d %H:%M')}"
-        if n.user:
-            if n.user.id:
-                r += f" ({n.user.id}"
-
-            if n.user.shortName:
-                r += f", {n.user.shortName})"
-            else:
-                r += ")"
-
-            if n.user.longName:
-                r += f", {n.user.longName}"
-
-        r += f", {n.snr} snr, {n.hopsAway} hops"
-        r += "\n\n"
+        r = f"{n.user.id}: {n.user.longName} ({n.user.shortName})\n"
 
         if len(response) + len(r) > 200:
             break
         else:
             response += r
 
-    return response
+    return response.strip()
 
 
 def format_node_detail(n: NodeInfo) -> str:
@@ -61,7 +47,8 @@ Device Metrics:
 
 class NodeQuery(BaseCommand):
     command = "node"
-    description = "read bot node DB"
+    description = "read my node DB"
+    help = "'node' for list\n'node <!id>' for detail\n'node me' for yours\n'node you' for mine"
 
     node_list_count: int = 5
 
@@ -71,29 +58,35 @@ class NodeQuery(BaseCommand):
 
         # they want a list
         if msg == "":
-            log.debug("list")
             n: NodeInfo
             ns: list[NodeInfo] = []
 
             for n in self.interface.nodes.values():
-                ns.append(NodeInfo(**n))
-                if len(ns) > self.node_list_count:
-                    break
+                n = NodeInfo(**n)
+                # don't show ourselves
+                if n.user.id == self.interface.getMyUser()["id"]:
+                    continue
+                ns.append(n)
             return format_node_list(ns)
 
-        # they want information about themselves
+        # they want to know about themselves
         elif msg.strip().lower() == "me":
-            log.debug("me")
             n: NodeInfo = self.get_node(node)
+            return format_node_detail(n)
+
+        # they want to know about us
+        elif msg.strip().lower() == "you":
+            n = NodeInfo(**self.interface.getMyNodeInfo())
             return format_node_detail(n)
 
         # they want information about someone else
         else:
-            log.debug("else")
             try:
                 n: NodeInfo = self.get_node(msg)
             except:
                 log.exception(f"Failed to find node '{msg}'")
-                return "I can't find that node."
 
-            return format_node_detail(n)
+            if n:
+                return format_node_detail(n)
+            else:
+                return "I can't find that node. Use the hex identifier that begins with '!'."
