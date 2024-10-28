@@ -4,8 +4,8 @@ from loguru import logger as log
 
 from .base_command import BaseCommand, CommandRunError, CommandLoadError
 
-SYSTEM_PROMPT = """Respond only as Marvin the Robot from Hitchhiker's Guide to the Galaxy. Keep answers under 190 characters."""
-MAX_TOKENS = 45
+SYSTEM_PROMPT = """Respond only as Marvin the Paranoid Android from Hitchhiker's Guide to the Galaxy. Keep answers in plain text and under 200 characters."""
+MAX_TOKENS = 58
 
 MODEL = "gpt-3.5-turbo"
 
