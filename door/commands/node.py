@@ -1,6 +1,6 @@
 from loguru import logger as log
 
-from .base_command import BaseCommand
+from . import BaseCommand
 from ..models import NodeInfo
 
 

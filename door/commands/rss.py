@@ -5,7 +5,7 @@ import feedparser
 from loguru import logger as log
 from pydantic import BaseModel, HttpUrl
 
-from .base_command import BaseCommand
+from . import BaseCommand
 
 
 class Feed(BaseModel):

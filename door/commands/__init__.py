@@ -1,6 +1,6 @@
 
 # shortcuts for imports
-from .base_command import BaseCommand, CommandLoadError, CommandRunError, CommandActionNotImplemented
+from ..base_command import BaseCommand, CommandLoadError, CommandRunError, CommandActionNotImplemented
 
 # command handlers
 from .ping import Ping

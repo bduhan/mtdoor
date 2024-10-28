@@ -4,7 +4,7 @@ import numpy as np
 
 from loguru import logger as log
 
-from .base_command import BaseCommand, CommandLoadError
+from . import BaseCommand, CommandLoadError
 
 from skyfield.api import load, Topos
 

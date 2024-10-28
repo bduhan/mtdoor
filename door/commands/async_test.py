@@ -2,7 +2,7 @@ import time
 
 from loguru import logger as log
 
-from .base_command import BaseCommand
+from . import BaseCommand
 
 
 class AsyncTest(BaseCommand):

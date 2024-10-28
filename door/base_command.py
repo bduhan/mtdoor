@@ -6,7 +6,7 @@ from loguru import logger as log
 from pubsub import pub
 
 
-from ..models import NodeInfo
+from .models import NodeInfo
 
 class CommandRunError(Exception):
     pass

@@ -1,4 +1,4 @@
-from .base_command import BaseCommand
+from . import BaseCommand
 
 class Ping(BaseCommand):
     command = "ping"

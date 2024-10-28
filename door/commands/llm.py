@@ -2,7 +2,7 @@ from openai import OpenAI
 from rich.pretty import pprint
 from loguru import logger as log
 
-from .base_command import BaseCommand, CommandRunError, CommandLoadError
+from . import BaseCommand, CommandRunError, CommandLoadError
 
 SYSTEM_PROMPT = """Respond only as Marvin the Paranoid Android from Hitchhiker's Guide to the Galaxy. Keep answers in plain text and under 200 characters."""
 MAX_TOKENS = 58
