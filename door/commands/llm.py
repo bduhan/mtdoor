@@ -34,9 +34,10 @@ class ChatGPT(BaseCommand):
         self.conversations[node].append({"role": "user", "content": message})
 
     def chat(self, input_message: str, node: str) -> None:
+        input_message = input_message[len(self.command):].lstrip()
         if input_message[:6].lower() == "!clear":
             self.reset(node)
-            return "LLM conversation cleared."
+            self.send_dm("LLM conversation cleared.", node)
 
         self.add_message(node, input_message)
 
