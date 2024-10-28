@@ -27,20 +27,19 @@ def format_node_detail(n: NodeInfo) -> str:
     """
 
     reply = f"""Name: {n.user.longName} ({n.user.shortName})
-Last heard: {n.last_heard.strftime("%Y-%m-%d %H:%M")}
-SNR: {n.snr}
-Hops: {n.hopsAway}"""
+Last heard {n.last_heard.strftime("%Y-%m-%d %H:%M")}
+SNR {n.snr}, Hops {n.hopsAway}"""
 
     if n.position:
         reply += f"""
-Position: {n.position.latitude}, {n.position.longitude}, {n.position.altitude}
+Pos.: {n.position.latitude:.7}, {n.position.longitude:.7}, {n.position.altitude}
 """
+
     if n.deviceMetrics:
         reply += f"""
-Device Metrics:
-- battery: {n.deviceMetrics.batteryLevel}% {n.deviceMetrics.voltage} volts
-- utilization: {n.deviceMetrics.channelUtilization} ({n.deviceMetrics.airUtilTx:.2})
-- uptime: {n.deviceMetrics.uptimeSeconds}"""
+Batt.: {n.deviceMetrics.batteryLevel}% {n.deviceMetrics.voltage:.3}V
+Util.: {n.deviceMetrics.channelUtilization} ch, {n.deviceMetrics.airUtilTx:.2} air
+Up: {n.deviceMetrics.uptimeSeconds}s"""
 
     return reply
 
