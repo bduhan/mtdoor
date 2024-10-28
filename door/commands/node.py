@@ -32,7 +32,7 @@ SNR {n.snr}, Hops {n.hopsAway}"""
 
     if n.position:
         reply += f"""
-Pos.: {n.position.latitude:.7}, {n.position.longitude:.7}, {n.position.altitude}
+Pos.: {n.position.latitude:.7}, {n.position.longitude:.8}, {n.position.altitude}
 """
 
     if n.deviceMetrics:
