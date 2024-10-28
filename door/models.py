@@ -18,8 +18,8 @@ class UserInfo(BaseModel):
 
 
 class Position(BaseModel):
-    latitude: float
-    longitude: float
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
     altitude: Optional[int] = None
     time: Optional[int] = None
 
