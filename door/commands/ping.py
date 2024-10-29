@@ -1,5 +1,6 @@
 from . import BaseCommand
 
+
 class Ping(BaseCommand):
     command = "ping"
     description = "'ping' replies with 'pong'"

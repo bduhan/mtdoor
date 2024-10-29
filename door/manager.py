@@ -1,8 +1,11 @@
+from configparser import ConfigParser
+from inspect import getmodule
+
 from meshtastic.mesh_interface import MeshInterface
 from loguru import logger as log
 from pubsub import pub
 
-from .commands import (
+from .base_command import (
     BaseCommand,
     CommandLoadError,
     CommandRunError,
@@ -14,8 +17,9 @@ class DoorManager:
     # use this topic to send response messages
     dm_topic: str = "mtdoor.send.text"
 
-    def __init__(self, interface: MeshInterface):
+    def __init__(self, interface: MeshInterface, settings: ConfigParser):
         self.interface = interface
+        self.settings = settings
         self.me = interface.getMyUser()["id"]
 
         # keep track of the commands added, don't let duplicates happen
@@ -37,12 +41,15 @@ class DoorManager:
 
         # instantiate and set some properties
         cmd = command()
+        module = getmodule(cmd).__name__
+
         cmd.dm_topic = self.dm_topic
         cmd.interface = self.interface
+        cmd.settings = self.settings
 
         # call "load" on the command class
         try:
-            log.debug(f"Loading '{cmd.command}'..")
+            log.debug(f"Loading '{cmd.command}' command from '{module}'..")
             cmd.load()
         except CommandActionNotImplemented:
             # it's ok if they don't implement a load method
@@ -53,6 +60,19 @@ class DoorManager:
         except:
             log.exception(f"Failed to load {command.command}")
             return
+
+        # gather global and module-specific settings
+        command_settings = dict(self.settings.items("global"))
+        if self.settings.has_section(module):
+            command_settings.update(self.settings.items(module))
+
+        # set properties on the class
+        # DANGER: this allows config file to overwrite any method or property of a command class
+        # for k, v in command_settings.items():
+        #     if k in UnavailableProperties:
+        #         continue
+        #     setattr(cmd, k, v)
+        #     print(module, k, v)
 
         self.commands.append(cmd)
 

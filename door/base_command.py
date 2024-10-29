@@ -1,12 +1,16 @@
 import threading
-from meshtastic.mesh_interface import MeshInterface
+from inspect import getmodule
 from collections.abc import Callable
+from configparser import ConfigParser
+from pathlib import Path
+
+from meshtastic.mesh_interface import MeshInterface
 
 from loguru import logger as log
 from pubsub import pub
 
-
 from .models import NodeInfo
+
 
 class CommandRunError(Exception):
     pass
@@ -43,6 +47,9 @@ class BaseCommand:
     # Meshtastic interface
     interface: MeshInterface
 
+    # global settings object
+    settings: ConfigParser
+
     def load(self):
         """
         raise CommandLoadError if we don't have resources necessary to operate
@@ -63,18 +70,47 @@ class BaseCommand:
         when command has a response for a node, call this
         """
         pub.sendMessage(self.dm_topic, message=message, node=node)
-    
-    def run_in_thread(self, method: Callable[[str, str], None], message: str, node: str) -> None:
+
+    def run_in_thread(
+        self, method: Callable[[str, str], None], message: str, node: str
+    ) -> None:
         """
         allow command handlers to start a thread then use send_dm to return a response at some later time
         method takes positional arguments (message, node)
         """
         thread = threading.Thread(target=method, args=(message, node))
         thread.start()
-    
+
     def get_node(self, node: str) -> NodeInfo:
         """
         try to fetch the detailed node information in meshtastic.interface[node]
         """
         if node in self.interface.nodes:
             return NodeInfo(**self.interface.nodes[node])
+
+    def get_setting(self, type, name: str, default=None):
+        """
+        fetch setting from the 'global' or module path section of the config file
+        """
+        module = getmodule(self).__name__
+
+        # where should we get this setting from?
+        source = None
+        if self.settings.has_option(module, name):
+            source = module
+        elif self.settings.has_option("global", name):
+            source = "global"
+        else:
+            return None
+
+        # type the result
+        if type == int:
+            return self.settings.getint(source, name, fallback=default)
+        elif type == float:
+            return self.settings.getfloat(source, name, fallback=default)
+        elif type == bool:
+            return self.settings.getboolean(source, name, fallback=default)
+        elif type == Path:
+            return Path(self.settings.get(source, name, fallback=default))
+        else:
+            return self.settings.get(source, name, fallback=default)

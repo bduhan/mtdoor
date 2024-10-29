@@ -29,16 +29,16 @@ pip install -r requirements.txt
 
 ### Running
 
+Copy `example.ini` and list any commands you would like to have loaded.
+
 ```bash
+cp example.ini my_door_config.ini
+
 # set this environment variable if you are using ChatGPT
 export OPENAI_API_KEY=...
 
-# for location services, in case we haven't seen node position
-export DEFAULT_LATITUDE=...
-export DEFAULT_LONGITUDE=...
-
 # run it
-python mtdoor.py
+python mtdoor.py my_door_config.ini
 ```
 
 

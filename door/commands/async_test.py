@@ -11,7 +11,12 @@ class AsyncTest(BaseCommand):
     """
     command = "async"
     description = "test command"
-    help = "Run a thread, sleep for 10 seconds, reply."
+    help = "Run a thread, sleep for some seconds, reply."
+
+    delay: int = 5
+
+    def load(self):
+        self.delay = self.get_setting(int, "delay", 8)
 
     def invoke(self, msg: str, node: str) -> None:
         self.run_in_thread(self.wait_in_thread, msg, node)
@@ -19,6 +24,6 @@ class AsyncTest(BaseCommand):
     def wait_in_thread(self, msg, node):
         log.debug(self.get_node(node))
         log.debug(f"thread_method sleeping..")
-        time.sleep(10)
+        time.sleep(self.delay)
         log.debug("thread_method done")
-        self.send_dm("waited", node)
+        self.send_dm(f"waited {self.delay} seconds", node)
