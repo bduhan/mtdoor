@@ -9,8 +9,7 @@ import sqlite3
 from pydantic import BaseModel
 from loguru import logger as log
 
-from . import BaseCommand, CommandLoadError
-from ..models import UserInfo
+from . import BaseCommand
 
 DDL = [
     """
@@ -84,6 +83,7 @@ def mesh_logger(db_file: Path, work: Queue, shutdown: Event):
                 ),
                 (item.fromId, item.toId, item.payload),
             )
+            db.commit()
         else:
             log.debug(f"Skipping unknown item: {item}")
             work.task_done()
