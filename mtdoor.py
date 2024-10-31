@@ -31,6 +31,21 @@ except:
     sys.exit(1)
 
 
+# some commands need a place to write data
+data_dir = settings.get("global", "data_dir", fallback=None)
+if not data_dir:
+    data_dir = Path().cwd() / "data"
+    settings.set("global", "data_dir", str(data_dir))
+else:
+    data_dir = Path(data_dir)
+
+try:
+    if not data_dir.exists():
+        data_dir.mkdir(parents=True)
+except:
+    log.error(f"Failed to create '{data_dir}'.")
+
+
 # find plugins
 available_commands = find_commands(settings)
 log.debug(
