@@ -46,7 +46,7 @@ Up: {n.deviceMetrics.uptimeSeconds}s"""
 
 class NodeQuery(BaseCommand):
     command = "node"
-    description = "read my node DB"
+    description = "read from my device node DB"
     help = "'node' for list\n'node <!id>' for detail\n'node me' for yours\n'node you' for mine"
 
     node_list_count: int = 5
