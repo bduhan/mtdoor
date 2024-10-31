@@ -68,8 +68,7 @@ class NodeInfo(BaseModel):
     """
     source: device node db
     """
-    num: int
-    id: str = Field(validation_alias=AliasChoices("id", "num"))
+    id: str = Field(validation_alias=AliasChoices("id"), default=None)
     snr: Optional[float] = None
     hopsAway: Optional[int] = None
     lastHeard: Optional[int] = None
