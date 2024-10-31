@@ -6,97 +6,157 @@ from typing import Optional
 
 from pubsub import pub
 import sqlite3
+from sqlite3 import Cursor
 from pydantic import BaseModel
 from loguru import logger as log
 
 from . import BaseCommand
-
-DDL = [
-    """
-CREATE TABLE IF NOT EXISTS message (
-    timestamp INTEGER,
-    fromId TEXT,
-    toId TEXT,
-    payload TEXT
-);
-""",
-    """
-CREATE TABLE IF NOT EXISTS position (
-    timestamp INTEGER,
-    fromId TEXT,
-    latitude REAL,
-    longitude REAL,
-    altitude INTEGER
-);
-""",
-]
+from ..models import UserInfo, Message, Position, DeviceMetric, EnvironmentMetric
 
 
-class ShortUserInfo(BaseModel):
-    # timestamp: datetime.datetime
-    fromId: str
-    toId: Optional[str] = None
+def insert_node(cursor: Cursor, node: str):
+    cursor.execute("INSERT OR IGNORE INTO node VALUES (?)", (node,))
 
 
-class Message(ShortUserInfo):
-    payload: str
+def insert_message(cursor: Cursor, message: Message):
+    cursor.execute(
+        (
+            "INSERT INTO message (timestamp, fromId, toId, payload) "
+            "VALUES (datetime(), ?, ?, ?)"
+        ),
+        (message.fromId, message.toId, message.payload),
+    )
 
 
-class Position(ShortUserInfo):
-    latitude: float
-    longitude: float
-    altitude: Optional[float] = None
+def insert_node_info(cursor: Cursor, node_info: UserInfo):
+    cursor.execute(
+        (
+            "INSERT INTO node_info (timestamp, node, longName, shortName, macaddr, hwModel) "
+            "VALUES (datetime(), ?, ?, ?, ?, ?)"
+        ),
+        (
+            node_info.id,
+            node_info.longName,
+            node_info.shortName,
+            node_info.macaddr,
+            node_info.hwModel,
+        ),
+    )
+
+
+def insert_position(cursor: Cursor, position: Position):
+    cursor.execute(
+        (
+            "INSERT INTO position (timestamp, node, latitude, longitude, altitude) "
+            "VALUES (datetime(), ?, ?, ?, ?)"
+        ),
+        (position.id, position.latitude, position.longitude, position.altitude),
+    )
+
+
+def insert_device_metric(cursor: Cursor, device_metric: DeviceMetric):
+    cursor.execute(
+        (
+            "INSERT INTO device_metric "
+            "(timestamp, node, batteryLevel, channelUtilization, airUtilTx, uptimeSeconds) "
+            "VALUES (datetime(), ?, ?, ?, ?, ?);"
+        ),
+        (
+            device_metric.id,
+            device_metric.batteryLevel,
+            device_metric.channelUtilization,
+            device_metric.airUtilTx,
+            device_metric.uptimeSeconds,
+        ),
+    )
+
+
+def insert_environment_metric(cursor: Cursor, em: EnvironmentMetric):
+    cursor.execute(
+        (
+            "INSERT INTO environment_metric ("
+            "timestamp, node, temperature, relative_humidity, barometric_pressure, "
+            "gas_resistance, voltage, current, iaq, distance, "
+            "lux, white_lux, ir_lux, uv_lux, wind_direction, "
+            "wind_speed, weight, wind_gust, wind_lull"
+            ") VALUES ("
+            "datetime(), ?, ?, ?, ?, "
+            "?, ?, ?, ?, ?,"
+            "?, ?, ?, ?, ?,"
+            "?, ?, ?, ?"
+            ")"
+        ),
+        (
+            em.id,
+            em.temperature,
+            em.relative_humidity,
+            em.barometric_pressure,
+            em.gas_resistance,
+            em.voltage,
+            em.current,
+            em.iaq,
+            em.distance,
+            em.lux,
+            em.white_lux,
+            em.ir_lux,
+            em.uv_lux,
+            em.wind_direction,
+            em.wind_speed,
+            em.weight,
+            em.wind_gust,
+            em.wind_lull,
+        ),
+    )
 
 
 def mesh_logger(db_file: Path, work: Queue, shutdown: Event):
     db = sqlite3.connect(db_file)
 
     # create tables
-    for ddl in DDL:
-        db.execute(ddl)
+    ddl_file = Path(__file__).with_name("mesh_logger.sql")
+    db.executescript(ddl_file.open("r").read())
     db.commit()
 
     # run
     log.debug("started mesh_logger thread")
+    node_id: str
+    item: BaseModel
     while not shutdown.is_set():
         try:
-            item: BaseModel = work.get(timeout=1)
+            node_id, item = work.get(timeout=1)
         except Empty:
             continue
 
-        log.debug(item)
+        # NOTE this is unsafe
+        # if something fails and we don't mark the work as done it will hang forever on nice shutdown
+
+        log.debug(f"{type(item).__name__} {item.model_dump(exclude_unset=True)}")
+        cursor = db.cursor()
+
+        insert_node(cursor, node_id)
 
         if type(item) == Position:
-            db.execute(
-                (
-                    "INSERT INTO position (timestamp, fromId, latitude, longitude) "
-                    "VALUES (datetime(), ?, ?, ?)"
-                ),
-                (item.fromId, item.latitude, item.longitude),
-            )
-            db.commit()
+            # item.id = node_id
+            insert_position(cursor, item)
         elif type(item) == Message:
-            db.execute(
-                (
-                    "INSERT INTO message (timestamp, fromId, toId, payload) "
-                    "VALUES (datetime(), ?, ?, ?)"
-                ),
-                (item.fromId, item.toId, item.payload),
-            )
-            db.commit()
+            # the recipient of this message may not already be in our node table
+            insert_node(cursor, item.toId)
+            insert_message(cursor, item)
+        elif type(item) == UserInfo:
+            item.id = node_id
+            insert_node_info(cursor, item)
+        elif type(item) == DeviceMetric:
+            item.id = node_id
+            insert_device_metric(cursor, item)
+        elif type(item) == EnvironmentMetric:
+            item.id = node_id
+            insert_environment_metric(cursor, item)
         else:
             log.debug(f"Skipping unknown item: {item}")
-            work.task_done()
-            continue
-
-        # db.execute(
-        #     "INSERT INTO mesh_log (type, timestamp, data) VALUES (?, datetime(), ?)",
-        #     (type_str, item.model_dump_json(exclude_none=True, exclude_unset=True)),
-        # )
-        db.commit()
-        # dirty = True
 
         work.task_done()
+        cursor.close()
+        db.commit()
 
 
 class MeshLogger(BaseCommand):
@@ -111,7 +171,7 @@ class MeshLogger(BaseCommand):
 
     def load(self):
         data_dir: Path = self.get_setting(Path, "data_dir")
-        self.db_file = data_dir / "mesh_log.sqlite"
+        self.db_file = data_dir / "mesh_logger.sqlite"
 
         # only log packets that are not private to me
         self.me = self.interface.getMyUser()["id"]
@@ -126,8 +186,7 @@ class MeshLogger(BaseCommand):
         )
         thread.start()
 
-        pub.subscribe(self.on_data, "meshtastic.receive.text")
-        pub.subscribe(self.on_data, "meshtastic.receive.position")
+        pub.subscribe(self.on_data, "meshtastic.receive")
 
     def invoke(self, msg: str, node: str):
         # shouldn't be a problem connecting from different threads if we are just reading
@@ -148,22 +207,51 @@ class MeshLogger(BaseCommand):
                 break
             reply += line
         db.close()
-        
+
         self.send_dm(reply.strip(), node)
 
     def on_data(self, packet, interface):
         # skip packets sent directly to us
-        if "toId" in packet and packet["toId"] == self.me:
-            return
 
         if "decoded" not in packet:
             log.debug(f"'decoded' not in packet keys: {packet.keys()}")
             return
 
+        unknown = True
         decoded = packet["decoded"]
         fromId = packet["fromId"]
         toId = packet.get("toId", None)
 
+        if "portnum" in decoded:
+            if decoded["portnum"] == "TELEMETRY_APP":
+                unknown = False
+
+                if "deviceMetrics" in decoded["telemetry"]:
+                    # log.debug(decoded["telemetry"]['deviceMetrics'])
+                    metric = DeviceMetric(**decoded["telemetry"]["deviceMetrics"])
+                    self.work_queue.put((fromId, metric))
+                if "environmentMetrics" in decoded["telemetry"]:
+                    # log.debug(decoded["telemetry"]["environmentMetrics"])
+                    metric = EnvironmentMetric(
+                        **decoded["telemetry"]["environmentMetrics"]
+                    )
+                    self.work_queue.put((fromId, metric))
+
+            elif decoded["portnum"] == "NODEINFO_APP":
+                node_info = UserInfo(**decoded["user"])
+                self.work_queue.put((fromId, node_info))
+                unknown = False
+
+            elif decoded["portnum"] == "TEXT_MESSAGE_APP":
+                if "toId" in packet and packet["toId"] == self.me:
+                    return
+                message = Message(
+                    fromId=fromId, toId=toId, payload=packet["decoded"]["payload"]
+                )
+                self.work_queue.put((packet["toId"], message))
+                unknown = False
+
+        # position could be attached with other "apps"
         if "position" in decoded:
             pos = decoded["position"]
             if "latitude" in pos and "longitude" in pos:
@@ -174,13 +262,12 @@ class MeshLogger(BaseCommand):
                     longitude=pos["longitude"],
                     altitude=pos.get("altitude", None),
                 )
-                self.work_queue.put(position)
+                self.work_queue.put((fromId, position))
+            unknown = False
 
-        if "payload" in decoded and decoded["portnum"] == "TEXT_MESSAGE_APP":
-            message = Message(
-                fromId=fromId, toId=toId, payload=packet["decoded"]["payload"]
-            )
-            self.work_queue.put(message)
+        if unknown:
+            log.debug("unknown packet")
+            log.debug(packet)
 
     def shutdown(self):
         log.debug("Joining work queue..")

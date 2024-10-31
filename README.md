@@ -48,3 +48,19 @@ A modular command handling system makes it easy to write new commands, perform l
 
 Commands should check requirements to operate (e.g. files, Internet, API key) in their `.load()` method and raise `CommandLoadError` to be ignored.
 
+
+## Mesh logging
+
+Enabling `door.commands.mesh_logger` will create an SQLite database with a log of common packets. Use this feature for good, not evil.
+
+Datasette is a handy tool for navigating SQLite databases. Install with:
+
+```bash
+pip install datasette
+
+# nice-to-have plugins
+datasette install datasette-vega datasette-cluster-map datasette-saved-queries
+
+# run
+datasette <path to plugin data>
+```
