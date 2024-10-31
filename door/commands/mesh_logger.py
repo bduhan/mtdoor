@@ -112,11 +112,6 @@ def insert_environment_metric(cursor: Cursor, em: EnvironmentMetric):
 def mesh_logger(db_file: Path, work: Queue, shutdown: Event):
     db = sqlite3.connect(db_file)
 
-    # create tables
-    ddl_file = Path(__file__).with_name("mesh_logger.sql")
-    db.executescript(ddl_file.open("r").read())
-    db.commit()
-
     # run
     log.debug("started mesh_logger thread")
     node_id: str
@@ -173,6 +168,12 @@ class MeshLogger(BaseCommand):
         data_dir: Path = self.get_setting(Path, "data_dir")
         self.db_file = data_dir / "mesh_logger.sqlite"
 
+        # create tables
+        db = sqlite3.connect(self.db_file)
+        ddl_file = Path(__file__).with_name("mesh_logger.sql")
+        db.executescript(ddl_file.open("r").read())
+        db.commit()
+
         # only log packets that are not private to me
         self.me = self.interface.getMyUser()["id"]
 
@@ -183,6 +184,7 @@ class MeshLogger(BaseCommand):
         thread = Thread(
             target=mesh_logger,
             args=(self.db_file, self.work_queue, self.shutdown_event),
+            name="mesh_logger"
         )
         thread.start()
 
@@ -222,16 +224,18 @@ class MeshLogger(BaseCommand):
         fromId = packet["fromId"]
         toId = packet.get("toId", None)
 
+        # skip messages from the device we are connected to
+        if fromId == self.me:
+            return
+
         if "portnum" in decoded:
             if decoded["portnum"] == "TELEMETRY_APP":
                 unknown = False
 
                 if "deviceMetrics" in decoded["telemetry"]:
-                    # log.debug(decoded["telemetry"]['deviceMetrics'])
                     metric = DeviceMetric(**decoded["telemetry"]["deviceMetrics"])
                     self.work_queue.put((fromId, metric))
                 if "environmentMetrics" in decoded["telemetry"]:
-                    # log.debug(decoded["telemetry"]["environmentMetrics"])
                     metric = EnvironmentMetric(
                         **decoded["telemetry"]["environmentMetrics"]
                     )
@@ -243,7 +247,8 @@ class MeshLogger(BaseCommand):
                 unknown = False
 
             elif decoded["portnum"] == "TEXT_MESSAGE_APP":
-                if "toId" in packet and packet["toId"] == self.me:
+                # skip messages directly to us
+                if toId == self.me:
                     return
                 message = Message(
                     fromId=fromId, toId=toId, payload=packet["decoded"]["payload"]
