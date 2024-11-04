@@ -38,6 +38,7 @@ class ChatGPT(BaseCommand):
         if input_message[:6].lower() == "!clear":
             self.reset(node)
             self.send_dm("LLM conversation cleared.", node)
+            return
 
         self.add_message(node, input_message)
 
