@@ -78,7 +78,7 @@ class BaseCommand:
         allow command handlers to start a thread then use send_dm to return a response at some later time
         method takes positional arguments (message, node)
         """
-        thread = threading.Thread(target=method, args=(message, node))
+        thread = threading.Thread(target=method, args=(message, node), name=self.command)
         thread.start()
 
     def get_node(self, node: str) -> NodeInfo:
