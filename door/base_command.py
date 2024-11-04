@@ -56,7 +56,10 @@ class BaseCommand:
         """
         raise CommandActionNotImplemented()
 
-    def clean(self):
+    def periodic(self):
+        """
+        called by main program every global.periodic_call_seconds
+        """
         raise CommandActionNotImplemented()
 
     def shutdown(self):

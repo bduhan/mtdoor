@@ -150,6 +150,16 @@ class DoorManager:
         if response:
             pub.sendMessage(self.dm_topic, message=response, node=node)
 
+    def periodic(self):
+        log.debug("Calling .periodic() on every command..")
+        for command in self.commands:
+            try:
+                command.periodic()
+            except CommandActionNotImplemented:
+                pass
+            except:
+                log.exception(f"{command.__name__}.periodic failed")
+
     def shutdown(self):
         log.debug(f"Shutting down {len(self.commands)} commands..")
         command: BaseCommand

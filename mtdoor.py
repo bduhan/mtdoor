@@ -89,11 +89,22 @@ signal.signal(signal.SIGINT, shutdown)
 signal.signal(signal.SIGTERM, shutdown)
 
 
+# if configured, call DoorManager.periodic regularly
+periodic_wait = settings.getint("global", "periodic_call_seconds", fallback=0)
+last_periodic = time.time()
+
 # main loop
 try:
     while should_shut_down != True:
         sys.stdout.flush()
         time.sleep(1)
+
+        # check if it's time to run periodic tasks
+        now = int(time.time())
+        if periodic_wait > 0 and now - last_periodic > periodic_wait:
+            door.periodic()
+            last_periodic = now
+
 except KeyboardInterrupt:
     pass
 
