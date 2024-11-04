@@ -43,8 +43,13 @@ class DoorManager:
         cmd = command()
         module = getmodule(cmd).__name__
 
+        # commands can publish responses with this topic
         cmd.dm_topic = self.dm_topic
+
+        # commands can access the Meshtastic interface
         cmd.interface = self.interface
+
+        # commands can access the ConfigParser settings file
         cmd.settings = self.settings
 
         # call "load" on the command class
@@ -60,19 +65,6 @@ class DoorManager:
         except:
             log.exception(f"Failed to load {command.command}")
             return
-
-        # gather global and module-specific settings
-        command_settings = dict(self.settings.items("global"))
-        if self.settings.has_section(module):
-            command_settings.update(self.settings.items(module))
-
-        # set properties on the class
-        # DANGER: this allows config file to overwrite any method or property of a command class
-        # for k, v in command_settings.items():
-        #     if k in UnavailableProperties:
-        #         continue
-        #     setattr(cmd, k, v)
-        #     print(module, k, v)
 
         self.commands.append(cmd)
 
@@ -127,6 +119,11 @@ class DoorManager:
         response = None
 
         log.info(f"RX {node} ({len(msg):>3}): {msg}")
+
+        # skip if responses are disabled globally
+        if self.settings.getboolean("global", "disable_all_responses", fallback=False):
+            log.debug("Not responding.")
+            return
 
         # show help for commands
         if msg.lower()[:5] == "help ":
