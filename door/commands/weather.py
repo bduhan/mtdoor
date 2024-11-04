@@ -7,7 +7,6 @@ wx obs
 Future (or another module)? Watch for new alerts and automatically broadcast
 """
 
-import os
 import datetime
 from loguru import logger as log
 import requests
@@ -113,15 +112,20 @@ def get_observations(station_id: str) -> list[Observation]:
     observations: list[Observation] = []
 
     for feat in data["features"]:
+        if "properties" not in feat:
+            continue
+
         p = feat["properties"]
-        observations.insert(
-            0,
-            Observation(
+        try:
+            # sometimes observations don't have temperature or relativeHumidity.. we skip them
+            obs = Observation(
                 timestamp=p["timestamp"],
                 temperature=p["temperature"]["value"],
                 humidity=p["relativeHumidity"]["value"],
-            ),
-        )
+            )
+        except:
+            continue
+        observations.insert(0, obs)
     return observations
 
 
@@ -162,57 +166,55 @@ class Weather(BaseCommand):
     # where to get weather information about the point provided
     point_info: PointInfo
 
-    latitude: float
-    longitude: float
-
-    # which weather station to use for current observations
-    station_info: StationInfo
+    default_latitude: float
+    default_longitude: float
 
     def load(self):
-        # TODO move these to configuration or ask the Meshtastic node
-        self.latitude = float(os.getenv("DEFAULT_LATITUDE", 33.548786))
-        self.longitude = float(os.getenv("DEFAULT_LONGITUDE", -101.905093))
+        self.default_latitude = self.settings.getfloat(
+            "global", "default_latitude", fallback=33.548786
+        )
+        self.default_longitude = self.settings.getfloat(
+            "global", "default_longitude", fallback=-101.905093
+        )
 
-        # loading fails if we can't reach the weather API
+        # try the API
         try:
-            self.point_info = get_point_info(self.latitude, self.longitude)
-            self.station_info = get_station_info(self.point_info.observationStations)
+            requests.get(NWS_API, timeout=5).raise_for_status()
         except:
-            # log.exception()
-            raise CommandLoadError("Failed to reach api.weather.gov")
+            raise CommandLoadError("Failed to reach NWS API")
 
     def invoke(self, msg: str, node: str) -> str:
-        if "alerts" in msg.lower():
-            return self.alerts()
-        if "obs" in msg.lower():
-            return self.observations()
-        else:
-            return self.forecast()
+        self.run_in_thread(self.run, msg, node)
 
-    def forecast(self):
-        try:
-            forecast_periods: list[ForecastItem] = get_forecast(
-                self.point_info.forecast
-            )
-        except:
-            raise CommandRunError(f"Failed to request weather forecast.")
+    def run(self, msg: str, node: str):
+        # if we have location for a user, use it
+        latitude = self.default_latitude
+        longitude = self.default_longitude
+        user = self.get_node(node)
 
-        if len(forecast_periods) == 0:
-            return "No forecast returned."
+        if (
+            user
+            and user.position
+            and user.position.latitude
+            and user.position.longitude
+        ):
+            latitude = user.position.latitude
+            longitude = user.position.longitude
+            log.debug(f"user position: {round(latitude, 5)}, {round(longitude, 5)}")
 
         reply = ""
-        for p in forecast_periods:
-            proposed_addition = f"{p.name.upper()}: {p.detailedForecast}\n"
-            if len(reply + proposed_addition) > 210:
-                break
-            else:
-                reply += proposed_addition
+        if "alerts" in msg.lower():
+            reply = self.alerts(latitude, longitude)
+        if "obs" in msg.lower():
+            reply = self.observations(latitude, longitude)
+        else:
+            reply = self.forecast(latitude, longitude)
 
-        return reply.strip()
+        self.send_dm(reply, node)
 
-    def alerts(self) -> str:
+    def alerts(self, latitude: float, longitude: float) -> str:
         try:
-            alerts: list[Alert] = get_alerts(self.latitude, self.longitude)
+            alerts: list[Alert] = get_alerts(latitude, longitude)
         except:
             log.exception("Failed to get alerts")
             raise CommandRunError()
@@ -231,17 +233,29 @@ class Weather(BaseCommand):
                 reply += proposed_addition
         return reply.strip()
 
-    def observations(self) -> str:
+    def observations(self, latitude, longitude) -> str:
         try:
-            observations = get_observations(self.station_info.stationIdentifier)
+            point_info = get_point_info(latitude, longitude)
+        except:
+            log.exception("Failed to get point info.")
+            return "Error getting point info."
+
+        try:
+            station_info = get_station_info(point_info.observationStations)
+        except:
+            log.exception("Failed to get observation stations.")
+            return "Error getting observation stations."
+
+        try:
+            observations = get_observations(station_info.stationIdentifier)
         except:
             log.exception("Failed to get observations")
-            raise CommandLoadError()
+            return "Error getting observations."
 
         if len(observations) == 0:
             return "No weather observations"
 
-        timezone = pytz.timezone(self.station_info.timeZone)
+        timezone = pytz.timezone(station_info.timeZone)
 
         reply = ""
         for obs in observations:
@@ -254,4 +268,31 @@ class Weather(BaseCommand):
                 break
             else:
                 reply += proposed_addition
+        return reply.strip()
+
+    def forecast(self, latitude, longitude):
+        try:
+            point_info = get_point_info(latitude, longitude)
+        except:
+            log.exception("Failed to get point info.")
+            return "Error getting point info."
+
+        try:
+            forecast_periods: list[ForecastItem] = get_forecast(point_info.forecast)
+        except:
+            raise CommandRunError(f"Failed to request weather forecast.")
+
+        if len(forecast_periods) == 0:
+            return "No forecast returned."
+
+        reply = ""
+        for p in forecast_periods:
+            proposed_addition = f"{p.name.upper()}: {p.detailedForecast}\n"
+            if len(reply + proposed_addition) > 200:
+                break
+            else:
+                reply += proposed_addition
+
+        if reply.strip() == "":
+            return "Forecast was too long 😤"
         return reply.strip()
