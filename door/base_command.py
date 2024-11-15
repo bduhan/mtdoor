@@ -104,7 +104,7 @@ class BaseCommand:
         elif self.settings.has_option("global", name):
             source = "global"
         else:
-            return None
+            return default
 
         # type the result
         if type == int:
