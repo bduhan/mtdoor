@@ -116,12 +116,16 @@ class Astro(BaseCommand):
     longitude: float
 
     def load(self):
-        self.latitude = float(os.getenv("DEFAULT_LATITUDE", 33.548786))
-        self.longitude = float(os.getenv("DEFAULT_LONGITUDE", -101.905093))
+        self.default_latitude = self.settings.getfloat(    
+            "global", "default_latitude", fallback=33.548786    
+        )    
+        self.default_longitude = self.settings.getfloat(    
+            "global", "default_longitude", fallback=-101.905093    
+        )
 
         # run each function to make sure required resources are loaded
         try:
-            solar_position(self.latitude, self.longitude)
+            solar_position(self.default_latitude, self.default_longitude)
             moon_phase()
         except:
             log.exception("Failed to load Astro")
@@ -129,8 +133,8 @@ class Astro(BaseCommand):
 
     def invoke(self, msg: str, node: str) -> str:
         # in case we need position
-        latitude = self.latitude
-        longitude = self.longitude
+        latitude = self.default_latitude
+        longitude = self.default_longitude
 
         user = self.get_node(node)
 
