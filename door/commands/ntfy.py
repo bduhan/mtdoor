@@ -8,13 +8,12 @@
 # [door.commands.msg]
 # enabled = true
 # ntfy_url = https://ntfy.mydomain.com/meshtastic
-# ntfy_user = meshtastic
 # ntfy_token = my-ntfy-user-token
 
 import requests
 import time
 from loguru import logger as log
-from . import BaseCommand
+from . import BaseCommand, CommandRunError, CommandLoadError
 
 class Ntfy(BaseCommand):
     """
@@ -26,11 +25,13 @@ class Ntfy(BaseCommand):
 
     def load(self):
         self.ntfy_url = self.get_setting(str, "ntfy_url", None) 
-        self.username = self.get_setting(str, "ntfy_user", None)
-        self.access_token = self.get_setting(str, "ntfy_token", None)
-        if not (self.ntfy_url and self.username and self.access_token):
-            log.exception("Failed to load Ntfy. Check settings in config.ini")
-            raise CommandLoadError()
+        self.ntfy_token = self.get_setting(str, "ntfy_token", None)
+        if not self.ntfy_url:
+            log.warning("ntfy_url not found in config.ini")
+            raise CommandLoadError(f"{self.command} missing configuration data")
+        if not self.ntfy_token:
+            log.warning("ntfy_token not found in config.ini")
+            raise CommandLoadError(f"{self.command} missing configuration data")
 
     def invoke(self, msg: str, node: str) -> str:
         """Send the message text to the ntfy server with authentication and return a confirmation."""
@@ -51,7 +52,7 @@ class Ntfy(BaseCommand):
                         f"To: {local_node_long_name} ({local_node_short_name})\n"
                         f"{msg[len('msg '):].strip()}")
         headers = {
-            "Authorization": f"Bearer {self.access_token}"
+            "Authorization": f"Bearer {self.ntfy_token}"
         }
         
         try:
