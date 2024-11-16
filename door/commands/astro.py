@@ -1,4 +1,3 @@
-import os
 from datetime import datetime
 import numpy as np
 
@@ -7,6 +6,11 @@ from loguru import logger as log
 from . import BaseCommand, CommandLoadError
 
 from skyfield.api import Loader, Topos
+from skyfield import almanac
+
+from datetime import datetime, timedelta
+from timezonefinder import TimezoneFinder
+import pytz
 
 load = Loader('./data/')
 
@@ -108,6 +112,63 @@ def moon_phase():
     return phase + f" ({angle:.1f}°)"
 
 
+def sun_rise_set_times(latitude, longitude):    
+    ts = load.timescale()    
+    e = load("de421.bsp")    
+    observer = Topos(latitude, longitude)    
+    t0 = ts.now()    
+    t1 = ts.now() + timedelta(days=1)    
+    
+    # Calculate sunrise and sunset    
+    f = almanac.sunrise_sunset(e, observer)    
+    times, events = almanac.find_discrete(t0, t1, f)    
+    
+    # Get the timezone for the observer's location    
+    timezone_str = get_timezone(latitude, longitude)    
+    tz = pytz.timezone(timezone_str)    
+        
+    rise, set = None, None    
+    for time, event in zip(times, events):    
+        dt = time.utc_datetime().replace(tzinfo=pytz.UTC).astimezone(tz)    
+        if event == 1 and rise is None:    
+            rise = dt    
+        elif event == 0 and set is None:    
+            set = dt    
+    return rise, set    
+    
+
+def moon_rise_set_times(latitude, longitude):    
+    ts = load.timescale()    
+    e = load("de421.bsp")    
+    observer = Topos(latitude, longitude)    
+    t0 = ts.now()    
+    t1 = ts.now() + timedelta(days=1)    
+    
+    # Calculate moonrise and moonset    
+    f = almanac.risings_and_settings(e, e['moon'], observer)    
+    times, events = almanac.find_discrete(t0, t1, f)    
+    
+    # Get the timezone for the observer's location    
+    timezone_str = get_timezone(latitude, longitude)    
+    tz = pytz.timezone(timezone_str)    
+        
+    rise, set = None, None    
+    for time, event in zip(times, events):    
+        dt = time.utc_datetime().replace(tzinfo=pytz.UTC).astimezone(tz)    
+        if event == 1 and rise is None:    
+            rise = dt    
+        elif event == 0 and set is None:    
+            set = dt    
+    return rise, set
+
+
+def get_timezone(latitude, longitude):
+    """Determine the timezone based on latitude and longitude."""    
+    tf = TimezoneFinder()    
+    timezone = tf.timezone_at(lat=latitude, lng=longitude)    
+    return timezone if timezone else "UTC"
+
+
 class Astro(BaseCommand):
     command = "astro"
     description = "Displays astronomical data"
@@ -146,10 +207,17 @@ class Astro(BaseCommand):
 
         if "sun" in msg.lower():
             altitude, azimuth = solar_position(latitude, longitude)
-            return f"🌞 altitude: {altitude}°, azimuth: {azimuth}°"
+            rise, set = sun_rise_set_times(latitude, longitude)
+            return (f"🌞 altitude: {altitude}°, azimuth: {azimuth}°\n"
+                    f"🌅 Next Sunrise: {rise.strftime('%m-%d %H:%M')}\n"
+                    f"🌇 Next Sunset: {set.strftime('%m-%d %H:%M')}")            
 
         elif "moon" in msg.lower():
-            return moon_phase()
+            phase = moon_phase()   
+            rise, set = moon_rise_set_times(latitude, longitude)
+            return (f"{phase}\n"
+                    f"🌕 Next Moonrise: {rise.strftime('%m-%d %H:%M') if rise else 'N/A'}\n"
+                    f"🌑 Next Moonset: {set.strftime('%m-%d %H:%M') if set else 'N/A'}")        
 
         else:
             return self.description + "\n\n" + self.help
