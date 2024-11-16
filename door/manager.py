@@ -1,16 +1,15 @@
 from configparser import ConfigParser
 from inspect import getmodule
-
 from meshtastic.mesh_interface import MeshInterface
 from loguru import logger as log
 from pubsub import pub
-
 from .base_command import (
     BaseCommand,
     CommandLoadError,
     CommandRunError,
     CommandActionNotImplemented,
 )
+import inspect
 
 
 class DoorManager:
@@ -138,7 +137,11 @@ class DoorManager:
         handler = self.get_command_handler(msg.lower())
         if handler:
             try:
-                response = handler.invoke(msg, node)
+                if 'packet' in inspect.signature(handler.invoke).parameters.keys():
+                    # Expose packet data to commands like 'ping'
+                    response = handler.invoke(msg, node, packet=packet)
+                else:
+                    response = handler.invoke(msg, node)
             except CommandRunError:
                 response = f"Command to '{handler.command}' failed."
         else:
