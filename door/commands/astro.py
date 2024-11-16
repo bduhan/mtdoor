@@ -109,7 +109,7 @@ def moon_phase():
 
 class Astro(BaseCommand):
     command = "astro"
-    description = "astronomy and astrology"
+    description = "Displays astronomical data"
     help = """'astro sun', 'astro moon'"""
 
     latitude: float
@@ -147,4 +147,4 @@ class Astro(BaseCommand):
             return moon_phase()
 
         else:
-            return "Unknown sub-command."
+            return self.description + "\n\n" + self.help
