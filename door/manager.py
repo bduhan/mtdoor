@@ -20,6 +20,7 @@ class DoorManager:
         self.interface = interface
         self.settings = settings
         self.me = interface.getMyUser()["id"]
+        self.default_command = dict(self.settings.items("global")).get("default_command", "help")
 
         # keep track of the commands added, don't let duplicates happen
         self.commands = []
@@ -145,7 +146,16 @@ class DoorManager:
             except CommandRunError:
                 response = f"Command to '{handler.command}' failed."
         else:
-            response = self.help_message()
+            # Attempt to load the default handler    
+            handler = self.get_command_handler(self.default_command)    
+            if handler:    
+                try:    
+                    response = handler.invoke(f"{self.default_command} {msg}", node)    
+                except CommandRunError:    
+                    response = f"Command to '{handler.command}' failed."    
+            else:    
+                # No default handler available. Show help message
+                response = self.help_message()
 
         # command handlers may or may not return a response
         # they have the option of handling it themselves on long-running tasks
