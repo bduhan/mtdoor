@@ -134,6 +134,13 @@ class DoorManager:
                 )
                 return
 
+        # show global help
+        if msg.lower()[:4] == "help":
+            pub.sendMessage(
+                self.dm_topic, message=self.help_message(), node=node
+            )
+            return
+
         # look for a regular command handler
         handler = self.get_command_handler(msg.lower())
         if handler:
