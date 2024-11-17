@@ -20,7 +20,6 @@ class ChatGPT(BaseCommand):
         self.system_prompt = (
             self.get_setting(str, "system_prompt", "").strip('"').strip("'")
         )
-        log.debug(self.system_prompt)
         self.model = self.get_setting(str, "model", "gpt-3.5-turbo")
         self.api_key = self.get_setting(str, "api_key", os.getenv("OPENAI_API_KEY"))
         if not self.api_key:
