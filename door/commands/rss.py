@@ -1,3 +1,10 @@
+# For each RSS feed, add two lines to the config.ini file
+# to specify the name and URL of the feed as follows:
+#
+# [door.commands.rss]
+# feed.onion.name = The Onion
+# feed.onion.url = https://theonion.com/rss
+
 import datetime
 
 import requests
@@ -6,6 +13,7 @@ from loguru import logger as log
 from pydantic import BaseModel, HttpUrl
 
 from . import BaseCommand
+from inspect import getmodule
 
 
 class Feed(BaseModel):
@@ -14,20 +22,6 @@ class Feed(BaseModel):
     url: HttpUrl
     last_updated: datetime.datetime | None = None
     headlines: list[str] | None = None
-
-
-FEEDS = [
-    Feed(name="The Onion", short_name="onion", url="https://theonion.com/rss"),
-    Feed(
-        name="Wikinews",
-        short_name="wiki",
-        url="https://en.wikinews.org/w/index.php?title=Special:NewsFeed&feed=rss&categories=Published&notcategories=No%20publish%7CArchived%7cAutoArchived%7cdisputed&namespace=0&count=15&ordermethod=categoryadd&stablepages=only",
-    ),
-    Feed(name="Hackaday", short_name="hack", url="https://hackaday.com/feed/"),
-    Feed(name="2600.com", short_name="2600", url="http://www.2600.com/rss.xml"),
-    Feed(name="Yahoo News", short_name="yahoo", url="https://www.yahoo.com/news/rss"),
-]
-
 
 def get_feed_titles(feed: Feed) -> list[str]:
     response = requests.get(feed.url)
@@ -48,8 +42,32 @@ class RSS(BaseCommand):
     help = "Show feeds with 'rss list'."
 
     def load(self):
-        # TODO read from configuration, feeds shouldn't be hard-coded
-        self.feed_names = [f.short_name for f in FEEDS]
+        self.feeds = self.get_feeds()
+        self.feed_names = [f.short_name for f in self.feeds]
+
+    # Read feeds from settings
+    def get_feeds(self):
+        feeds = []
+        previous = None
+        name = None
+        url = None
+        for key, value in self.settings.items(getmodule(self).__name__, raw=True):
+            item = key.split('.')
+            if item[0] == 'feed' and len(item) == 3:
+                short_name = item[1]
+                attr = item[2]
+                if previous != short_name:
+                    previous = short_name
+                    name = None
+                    url = None
+                if attr == 'name':
+                    name = value
+                if attr == 'url':
+                    url = value
+                if name and url:
+                    feeds.append(Feed(name=name, short_name=short_name, url=url))
+        return feeds
+
 
     def invoke(self, msg: str, node: str) -> str:
         self.run_in_thread(self.fetch, msg, node)
@@ -65,7 +83,7 @@ class RSS(BaseCommand):
         # search for the requested feed
         feed: Feed
         found_feed: Feed = None
-        for feed in FEEDS:
+        for feed in self.feeds:
             if feed.short_name in msg:
                 found_feed = feed
                 break
@@ -81,7 +99,7 @@ class RSS(BaseCommand):
     def list_feeds(self) -> str:
         feed: Feed
         return "Installed RSS feeds:\n\n" + "\n".join(
-            [f"{feed.short_name}: {feed.name}" for feed in FEEDS]
+            [f"{feed.short_name}: {feed.name}" for feed in self.feeds]
         )
 
     def build_reply(self, titles: list[str]) -> str:
