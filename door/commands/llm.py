@@ -1,3 +1,4 @@
+import os
 from openai import OpenAI
 from rich.pretty import pprint
 from loguru import logger as log
@@ -20,8 +21,12 @@ class ChatGPT(BaseCommand):
             self.get_setting(str, "system_prompt", "").strip('"').strip("'")
         )
         self.model = self.get_setting(str, "model", "gpt-3.5-turbo")
+        self.api_key = self.get_setting(str, "api_key", os.getenv("OPENAI_API_KEY"))
+        if not self.api_key:
+            log.warning("Set api_key in config.ini or set OPENAI_API_KEY environment variable.")    
+            raise CommandLoadError(f"{self.command} missing configuration data")
 
-        self.client = OpenAI()
+        self.client = OpenAI(api_key=self.api_key)
         self.token_count = 0
 
     def reset(self, node: str):
@@ -53,7 +58,7 @@ class ChatGPT(BaseCommand):
             f"OpenAI prompt_tokens: {usage.prompt_tokens}, completion_tokens: {usage.completion_tokens}, total_tokens: {usage.total_tokens}"
         )
 
-        answer = response.choices[0].message.content
+        answer = response.choices[0].message.content[:220]
 
         self.conversations[node].append({"role": "assistant", "content": answer})
 
