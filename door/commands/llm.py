@@ -58,7 +58,7 @@ class ChatGPT(BaseCommand):
             f"OpenAI prompt_tokens: {usage.prompt_tokens}, completion_tokens: {usage.completion_tokens}, total_tokens: {usage.total_tokens}"
         )
 
-        answer = response.choices[0].message.content
+        answer = response.choices[0].message.content[:220]
 
         self.conversations[node].append({"role": "assistant", "content": answer})
 
