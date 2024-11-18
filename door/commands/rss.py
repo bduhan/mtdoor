@@ -23,6 +23,7 @@ class Feed(BaseModel):
     last_updated: datetime.datetime | None = None
     headlines: list[str] | None = None
 
+
 def get_feed_titles(feed: Feed) -> list[str]:
     response = requests.get(feed.url)
     if response.status_code != 200:
@@ -52,22 +53,21 @@ class RSS(BaseCommand):
         name = None
         url = None
         for key, value in self.settings.items(getmodule(self).__name__, raw=True):
-            item = key.split('.')
-            if item[0] == 'feed' and len(item) == 3:
+            item = key.split(".")
+            if item[0] == "feed" and len(item) == 3:
                 short_name = item[1]
                 attr = item[2]
                 if previous != short_name:
                     previous = short_name
                     name = None
                     url = None
-                if attr == 'name':
+                if attr == "name":
                     name = value
-                if attr == 'url':
+                if attr == "url":
                     url = value
                 if name and url:
                     feeds.append(Feed(name=name, short_name=short_name, url=url))
         return feeds
-
 
     def invoke(self, msg: str, node: str) -> str:
         self.run_in_thread(self.fetch, msg, node)

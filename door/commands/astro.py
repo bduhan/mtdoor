@@ -12,7 +12,8 @@ from datetime import datetime, timedelta
 from timezonefinder import TimezoneFinder
 import pytz
 
-load = Loader('./data/')
+load = Loader("./data/")
+
 
 def solar_position(
     latitude,
@@ -112,60 +113,60 @@ def moon_phase():
     return phase + f" ({angle:.1f}°)"
 
 
-def sun_rise_set_times(latitude, longitude):    
-    ts = load.timescale()    
-    e = load("de421.bsp")    
-    observer = Topos(latitude, longitude)    
-    t0 = ts.now()    
-    t1 = ts.now() + timedelta(days=1)    
-    
-    # Calculate sunrise and sunset    
-    f = almanac.sunrise_sunset(e, observer)    
-    times, events = almanac.find_discrete(t0, t1, f)    
-    
-    # Get the timezone for the observer's location    
-    timezone_str = get_timezone(latitude, longitude)    
-    tz = pytz.timezone(timezone_str)    
-        
-    rise, set = None, None    
-    for time, event in zip(times, events):    
-        dt = time.utc_datetime().replace(tzinfo=pytz.UTC).astimezone(tz)    
-        if event == 1 and rise is None:    
-            rise = dt    
-        elif event == 0 and set is None:    
-            set = dt    
-    return rise, set    
-    
+def sun_rise_set_times(latitude, longitude):
+    ts = load.timescale()
+    e = load("de421.bsp")
+    observer = Topos(latitude, longitude)
+    t0 = ts.now()
+    t1 = ts.now() + timedelta(days=1)
 
-def moon_rise_set_times(latitude, longitude):    
-    ts = load.timescale()    
-    e = load("de421.bsp")    
-    observer = Topos(latitude, longitude)    
-    t0 = ts.now()    
-    t1 = ts.now() + timedelta(days=1)    
-    
-    # Calculate moonrise and moonset    
-    f = almanac.risings_and_settings(e, e['moon'], observer)    
-    times, events = almanac.find_discrete(t0, t1, f)    
-    
-    # Get the timezone for the observer's location    
-    timezone_str = get_timezone(latitude, longitude)    
-    tz = pytz.timezone(timezone_str)    
-        
-    rise, set = None, None    
-    for time, event in zip(times, events):    
-        dt = time.utc_datetime().replace(tzinfo=pytz.UTC).astimezone(tz)    
-        if event == 1 and rise is None:    
-            rise = dt    
-        elif event == 0 and set is None:    
-            set = dt    
+    # Calculate sunrise and sunset
+    f = almanac.sunrise_sunset(e, observer)
+    times, events = almanac.find_discrete(t0, t1, f)
+
+    # Get the timezone for the observer's location
+    timezone_str = get_timezone(latitude, longitude)
+    tz = pytz.timezone(timezone_str)
+
+    rise, set = None, None
+    for time, event in zip(times, events):
+        dt = time.utc_datetime().replace(tzinfo=pytz.UTC).astimezone(tz)
+        if event == 1 and rise is None:
+            rise = dt
+        elif event == 0 and set is None:
+            set = dt
+    return rise, set
+
+
+def moon_rise_set_times(latitude, longitude):
+    ts = load.timescale()
+    e = load("de421.bsp")
+    observer = Topos(latitude, longitude)
+    t0 = ts.now()
+    t1 = ts.now() + timedelta(days=1)
+
+    # Calculate moonrise and moonset
+    f = almanac.risings_and_settings(e, e["moon"], observer)
+    times, events = almanac.find_discrete(t0, t1, f)
+
+    # Get the timezone for the observer's location
+    timezone_str = get_timezone(latitude, longitude)
+    tz = pytz.timezone(timezone_str)
+
+    rise, set = None, None
+    for time, event in zip(times, events):
+        dt = time.utc_datetime().replace(tzinfo=pytz.UTC).astimezone(tz)
+        if event == 1 and rise is None:
+            rise = dt
+        elif event == 0 and set is None:
+            set = dt
     return rise, set
 
 
 def get_timezone(latitude, longitude):
-    """Determine the timezone based on latitude and longitude."""    
-    tf = TimezoneFinder()    
-    timezone = tf.timezone_at(lat=latitude, lng=longitude)    
+    """Determine the timezone based on latitude and longitude."""
+    tf = TimezoneFinder()
+    timezone = tf.timezone_at(lat=latitude, lng=longitude)
     return timezone if timezone else "UTC"
 
 
@@ -178,11 +179,11 @@ class Astro(BaseCommand):
     longitude: float
 
     def load(self):
-        self.default_latitude = self.settings.getfloat(    
-            "global", "default_latitude", fallback=33.548786    
-        )    
-        self.default_longitude = self.settings.getfloat(    
-            "global", "default_longitude", fallback=-101.905093    
+        self.default_latitude = self.settings.getfloat(
+            "global", "default_latitude", fallback=33.548786
+        )
+        self.default_longitude = self.settings.getfloat(
+            "global", "default_longitude", fallback=-101.905093
         )
 
         # run each function to make sure required resources are loaded
@@ -200,7 +201,12 @@ class Astro(BaseCommand):
 
         user = self.get_node(node)
 
-        if user and user.position and user.position.latitude and user.position.longitude:
+        if (
+            user
+            and user.position
+            and user.position.latitude
+            and user.position.longitude
+        ):
             latitude = user.position.latitude
             longitude = user.position.longitude
             log.debug(f"user position: {round(latitude, 5)}, {round(longitude, 5)}")
@@ -208,16 +214,20 @@ class Astro(BaseCommand):
         if "sun" in msg.lower():
             altitude, azimuth = solar_position(latitude, longitude)
             rise, set = sun_rise_set_times(latitude, longitude)
-            return (f"🌞 altitude: {altitude}°, azimuth: {azimuth}°\n"
-                    f"🌅 Next Sunrise: {rise.strftime('%m-%d %H:%M')}\n"
-                    f"🌇 Next Sunset: {set.strftime('%m-%d %H:%M')}")            
+            return (
+                f"🌞 altitude: {altitude}°, azimuth: {azimuth}°\n"
+                f"🌅 Next Sunrise: {rise.strftime('%m-%d %H:%M')}\n"
+                f"🌇 Next Sunset: {set.strftime('%m-%d %H:%M')}"
+            )
 
         elif "moon" in msg.lower():
-            phase = moon_phase()   
+            phase = moon_phase()
             rise, set = moon_rise_set_times(latitude, longitude)
-            return (f"{phase}\n"
-                    f"🌕 Next Moonrise: {rise.strftime('%m-%d %H:%M') if rise else 'N/A'}\n"
-                    f"🌑 Next Moonset: {set.strftime('%m-%d %H:%M') if set else 'N/A'}")        
+            return (
+                f"{phase}\n"
+                f"🌕 Next Moonrise: {rise.strftime('%m-%d %H:%M') if rise else 'N/A'}\n"
+                f"🌑 Next Moonset: {set.strftime('%m-%d %H:%M') if set else 'N/A'}"
+            )
 
         else:
             return self.description + "\n\n" + self.help

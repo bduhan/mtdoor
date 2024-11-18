@@ -9,6 +9,7 @@ class AsyncTest(BaseCommand):
     """
     Demonstrates a background thread.
     """
+
     command = "async"
     description = "test command"
     help = "Run a thread, sleep for some seconds, reply."
@@ -27,6 +28,6 @@ class AsyncTest(BaseCommand):
         time.sleep(self.delay)
         log.debug("thread_method done")
         self.send_dm(f"waited {self.delay} seconds", node)
-    
+
     def periodic(self):
         log.info("hello from periodic")

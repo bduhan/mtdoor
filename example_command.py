@@ -9,6 +9,7 @@ Activate in mtdoor.py configuration by adding:
 
 from door.base_command import BaseCommand
 
+
 class Command(BaseCommand):
     command = "example"
 

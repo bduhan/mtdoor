@@ -184,7 +184,7 @@ class MeshLogger(BaseCommand):
         thread = Thread(
             target=mesh_logger,
             args=(self.db_file, self.work_queue, self.shutdown_event),
-            name="mesh_logger"
+            name="mesh_logger",
         )
         thread.start()
 

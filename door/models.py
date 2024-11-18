@@ -12,6 +12,7 @@ class UserInfo(BaseModel):
     """
     source: packet
     """
+
     id: str = Field(validation_alias=AliasChoices("id", "fromId"))
     longName: Optional[str] = None
     shortName: Optional[str] = None
@@ -30,6 +31,7 @@ class Position(BaseModel):
     """
     source: packet or device node db
     """
+
     id: str = Field(validation_alias=AliasChoices("id", "fromId"), default=None)
     latitude: Optional[float] = None
     longitude: Optional[float] = None
@@ -48,6 +50,7 @@ class DeviceMetric(BaseModel):
     """
     source: packet
     """
+
     id: str = Field(validation_alias=AliasChoices("id", "fromId"), default=None)
     batteryLevel: Optional[int] = None
     voltage: Optional[float] = None
@@ -68,6 +71,7 @@ class NodeInfo(BaseModel):
     """
     source: device node db
     """
+
     id: str = Field(validation_alias=AliasChoices("id"), default=None)
     snr: Optional[float] = None
     hopsAway: Optional[int] = None
@@ -83,6 +87,7 @@ class NodeInfo(BaseModel):
         if self.lastHeard:
             return datetime.datetime.fromtimestamp(self.lastHeard, pytz.UTC)
 
+
 # class DeviceMetric(BaseModel):
 #     id: str = Field(validation_alias=AliasChoices("id", "fromId"))
 #     time: int
@@ -92,10 +97,12 @@ class NodeInfo(BaseModel):
 #     air_util_tx: float
 #     uptime_seconds: int
 
+
 class EnvironmentMetric(BaseModel):
     """
     source: packet
     """
+
     id: str = Field(validation_alias=AliasChoices("id", "fromId"), default=None)
     time: Optional[int] = None
     temperature: Optional[float] = None
@@ -115,4 +122,3 @@ class EnvironmentMetric(BaseModel):
     weight: Optional[float] = None
     wind_gust: Optional[float] = None
     wind_lull: Optional[float] = None
-

@@ -11,14 +11,14 @@ def format_node_list(nodes: list[NodeInfo], msg: str) -> str:
     response = ""
     n: NodeInfo
     for n in nodes:
-        if msg == "sn":    
+        if msg == "sn":
             # Listing only short names will maximize the number of nodes in response
-            r = f"{n.user.shortName}\n"    
+            r = f"{n.user.shortName}\n"
         elif msg == "ln":
             # This gives more info but will limit the # of nodes in response
             r = f"{n.user.id}: {n.user.longName} ({n.user.shortName})\n"
-        else:    
-            # List only nodeId by default 
+        else:
+            # List only nodeId by default
             r = f"{n.user.id}\n"
 
         if len(response) + len(r) > 200:
@@ -61,27 +61,29 @@ def format_node_detail(n: NodeInfo) -> str:
     return reply[:200]
 
 
-def format_time(seconds: int) -> str:    
-    if seconds < 60:    
-        return f"{seconds} seconds"    
-    elif seconds < 3600:    
-        minutes = int(seconds // 60)    
-        return f"{minutes} minute{'s' if minutes > 1 else ''}"    
-    elif seconds < 86400:    
-        hours = int(seconds // 3600)    
-        return f"{hours} hour{'s' if hours > 1 else ''}"    
-    else:    
-        days = int(seconds // 86400)    
+def format_time(seconds: int) -> str:
+    if seconds < 60:
+        return f"{seconds} seconds"
+    elif seconds < 3600:
+        minutes = int(seconds // 60)
+        return f"{minutes} minute{'s' if minutes > 1 else ''}"
+    elif seconds < 86400:
+        hours = int(seconds // 3600)
+        return f"{hours} hour{'s' if hours > 1 else ''}"
+    else:
+        days = int(seconds // 86400)
         return f"{days} day{'s' if days > 1 else ''}"
 
 
 class NodeQuery(BaseCommand):
     command = "node"
     description = "Read from my device node DB"
-    #help = "'node' for list\n'node <!id>' for detail\n'node me' for yours\n'node you' for mine"
-    help = ("'node' or 'node id' for NodeID list\n'node sn' for short name list\n"
-            "'node ln' for long names\n"
-            "'node <!id>' or 'node <name> for detail\n'node me' for yours\n'node you' for mine")
+    # help = "'node' for list\n'node <!id>' for detail\n'node me' for yours\n'node you' for mine"
+    help = (
+        "'node' or 'node id' for NodeID list\n'node sn' for short name list\n"
+        "'node ln' for long names\n"
+        "'node <!id>' or 'node <name> for detail\n'node me' for yours\n'node you' for mine"
+    )
 
     node_list_count: int = 5
 
