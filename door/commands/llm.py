@@ -48,16 +48,27 @@ class ChatGPT(BaseCommand):
 
         self.add_message(node, input_message)
 
-        response = self.client.chat.completions.create(
-            model=self.model,
-            messages=self.conversations[node],
-            max_tokens=self.max_tokens,
-        )
-        usage = response.usage
-        self.token_count += usage.total_tokens
-        log.info(
-            f"OpenAI prompt_tokens: {usage.prompt_tokens}, completion_tokens: {usage.completion_tokens}, total_tokens: {usage.total_tokens}"
-        )
+        # How can we get llm to be consistenyl brief?
+        # Dumb solution, check length and ask for shorter response
+        attempt = 1
+        length = 999
+        while attempt < 3 and length > 200:
+            attempt += 1
+            response = self.client.chat.completions.create(
+                model=self.model,
+                messages=self.conversations[node],
+                max_tokens=self.max_tokens,
+            )
+            usage = response.usage
+            self.token_count += usage.total_tokens
+            log.info(
+                f"OpenAI prompt_tokens: {usage.prompt_tokens}, completion_tokens: {usage.completion_tokens}, total_tokens: {usage.total_tokens}"
+            )
+            length = len(response.choices[0].message.content)
+            log.debug(f"{length}: {response.choices[0].message.content}")
+            if length > 200:
+                log.debug(f"Message length of {length} exceeds 200 characters. Asking llm for shorter version.")
+                self.add_message(node, "Your reply exceeds the 200 character limit of a Meshtastic message. Please restate in under 200 characters.")
 
         answer = response.choices[0].message.content[:200]
 
