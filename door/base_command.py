@@ -50,6 +50,9 @@ class BaseCommand:
     # global settings object
     settings: ConfigParser
 
+    # Persistent session state
+    session_persist: dict[str, bool] = {}
+
     def load(self):
         """
         raise CommandLoadError if we don't have resources necessary to operate
@@ -119,3 +122,11 @@ class BaseCommand:
             return Path(self.settings.get(source, name, fallback=default))
         else:
             return self.settings.get(source, name, fallback=default)
+
+    def persistent_session(self, node: str, persist: bool | None = None) -> bool:    
+        # Return current session state for node: state = self.presistent_session(node)    
+        # Or set persistent session: self.presistent_session(node, True)    
+        # Or end persistent session: self.presistent_session(node, False)    
+        if persist != None:    
+            self.session_persist[node] = persist    
+        return self.session_persist.get(node, False)
