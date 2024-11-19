@@ -6,3 +6,6 @@ openai
 feedparser
 pytz
 timezonefinder
+folium
+flask
+netifaces
