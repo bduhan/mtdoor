@@ -27,7 +27,7 @@ class Mail(BaseCommand):
         self.db = f"{data_dir}/mail.db"
         self.initialize_database()
         self.state = {}
-        self.inputs =[]
+        self.inputs = []
 
     def invoke(self, msg: str, node: str) -> str:
         if not self.state.get(node, None):
@@ -105,10 +105,7 @@ class Mail(BaseCommand):
                     self.state[node]["reply_to"] = None
                     self.state[node]["reply_subject"] = None
                     response = f"Deleted message #{index}\nFrom: {sender_short_name}\nSubject: {subject}\nDate: {date}"
-            elif (
-                inp == "all"
-                and self.state[node]["subcommand"] == "delete"
-            ):
+            elif inp == "all" and self.state[node]["subcommand"] == "delete":
                 self.state[node]["reply_to"] = None
                 self.state[node]["reply_subject"] = None
                 count = 0
@@ -119,10 +116,7 @@ class Mail(BaseCommand):
                 response = f"Deleted {count} messages"
             else:
                 for index, message in enumerate(messages):
-                    if (
-                        inp == "m"
-                        and index <= self.state[node]["list_index"]
-                    ):
+                    if inp == "m" and index <= self.state[node]["list_index"]:
                         continue
                     msg_id, sender_short_name, subject, date, unique_id = message
                     choice = f"{index + 1}) {sender_short_name} {subject} {date[5:]}\n"
@@ -151,7 +145,11 @@ class Mail(BaseCommand):
                         (inp.isdigit() and int(inp) == index)
                         or (inp == node_id.lower())
                         or (inp == self.get_shortName(node_id).lower())
-                        or (self.state[node]["reply_to"] == self.get_shortName(node_id))
+                        or (
+                            self.state[node]["subcommand"] == "reply"
+                            and self.state[node]["reply_to"]
+                            == self.get_shortName(node_id)
+                        )
                     ):
                         self.state[node]["to"] = node_id
                         inp = self.input(next=True)
@@ -174,11 +172,16 @@ class Mail(BaseCommand):
                     return response
 
             if self.state[node]["to"] and not self.state[node]["subject"]:
-                if self.state[node]["reply_subject"]:
+                if (
+                    self.state[node]["subcommand"] == "reply"
+                    and self.state[node]["reply_subject"]
+                ):
                     prefix = ""
                     if self.state[node]["reply_subject"][:4] != "re: ":
                         prefix = "re: "
-                    self.state[node]["subject"] = f"{prefix}{self.state[node]["reply_subject"]}"
+                    self.state[node][
+                        "subject"
+                    ] = f"{prefix}{self.state[node]["reply_subject"]}"
                 elif self.inputs:
                     self.state[node]["subject"] = " ".join(self.inputs)
                     self.inputs = []
@@ -195,7 +198,7 @@ class Mail(BaseCommand):
                 r_longName = self.get_longName(recipient)
                 s_shortName = self.get_shortName(node)
                 s_longName = self.get_longName(node)
-                subject = self.state[node]['subject']
+                subject = self.state[node]["subject"]
                 if self.inputs:
                     msg_text = " ".join(self.inputs)[:200]
                     self.add_mail(
@@ -254,7 +257,7 @@ class Mail(BaseCommand):
         if next and self.inputs:
             del self.inputs[0]
         return self.inputs[0].lower() if self.inputs else ""
-        
+
     def get_db_connection(self):
         return sqlite3.connect(self.db)
 
