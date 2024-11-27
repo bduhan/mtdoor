@@ -208,10 +208,16 @@ class Heatmap(BaseCommand):
             if (
                 node_data["latitude"]
                 and node_data["longitude"]
-                and (node_data["hopsAway"] == 0 or show_all)
-                and node_data["lastHeard"] != None
-                and datetime.now() - datetime.fromtimestamp(node_data["lastHeard"])
-                < timedelta(seconds=max_age)
+                and (
+                    (
+                        (node_data["hopsAway"] == 0 or show_all)
+                        and node_data["lastHeard"] != None
+                        and datetime.now()
+                        - datetime.fromtimestamp(node_data["lastHeard"])
+                        < timedelta(seconds=max_age)
+                    )
+                    or node_data["id"] == myNodeId
+                )
             ):
                 folium.map.Marker(
                     location=[node_data["latitude"], node_data["longitude"]],
