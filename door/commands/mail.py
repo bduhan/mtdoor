@@ -9,8 +9,9 @@ from loguru import logger as log
 import re
 import sqlite3
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 import uuid
+import pytz
 
 
 class Mail(BaseCommand):
@@ -85,6 +86,7 @@ class Mail(BaseCommand):
                     return "Invalid choice"
                 mail_id, sender_short_name, subject, date, unique_id = messages[index]
                 if self.state[node]["subcommand"] == "read":
+                    self.clear_notify(node, mail_id)
                     self.state[node]["reply_to"] = sender_short_name
                     self.state[node]["reply_subject"] = subject
                     message = self.get_mail_content(mail_id, node)
@@ -237,6 +239,40 @@ class Mail(BaseCommand):
 
         return response[:200]
 
+    def periodic(self):
+        # Check to see if we have heard from any nodes recently
+        # who have new mail messages waiting
+
+        self.local_tz = pytz.timezone("America/Chicago")
+        conn = self.get_db_connection()
+        c = conn.cursor()
+        c.execute(
+            "SELECT recipient, id FROM mail WHERE id IN (SELECT MAX(id) "
+            "FROM mail WHERE notify = 1 GROUP BY recipient);"
+        )
+        for recipient, mail_id in c.fetchall():
+            log.debug(f"recipient: {recipient} mail_id: {mail_id}")
+            node = self.interface.nodes.get(recipient, None)
+            if node:
+                lastHeard = node.get("lastHeard", 999)
+                lh = f"{datetime.fromtimestamp(lastHeard, self.local_tz).strftime('%Y-%m-%d %H:%M:%S')}"
+                log.debug(f"{datetime.now() - datetime.fromtimestamp(lastHeard)} ago")
+                if datetime.now() - datetime.fromtimestamp(lastHeard) < timedelta(
+                    seconds=300
+                ):
+                    log.debug(f"Node {recipient} heard recently, notifying of new mail")
+                    message = "You have new mail messages. Reply with 'mail' to see them."
+                    self.send_dm(message, recipient)
+                    self.clear_notify(recipient, mail_id)
+
+    def clear_notify(self, recipient, mail_id):
+        conn = self.get_db_connection()
+        c = conn.cursor()
+        c.execute(
+            f"UPDATE mail SET notify = 0 WHERE recipient = {recipient} AND id <= {mail_id} AND notify = 1;"
+        )
+        conn.commit()
+
     def get_longName(self, node_id):
         fallback = f"Meshtastic_{node_id[-4:]}"
         node = self.interface.nodes.get(node_id, None)
@@ -273,7 +309,8 @@ class Mail(BaseCommand):
                         date TEXT NOT NULL,
                         subject TEXT NOT NULL,
                         content TEXT NOT NULL,
-                        unique_id TEXT NOT NULL
+                        unique_id TEXT NOT NULL,
+                        notify BOOLEAN DEFAULT 1
                     );"""
         )
         conn.commit()
