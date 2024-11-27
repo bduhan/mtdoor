@@ -3,6 +3,7 @@ from inspect import getmodule
 from collections.abc import Callable
 from configparser import ConfigParser
 from pathlib import Path
+from datetime import datetime
 
 from meshtastic.mesh_interface import MeshInterface
 
@@ -49,6 +50,9 @@ class BaseCommand:
 
     # global settings object
     settings: ConfigParser
+
+    # Persistent session state
+    session_persist: dict[str, int] = {}
 
     def load(self):
         """
@@ -119,3 +123,15 @@ class BaseCommand:
             return Path(self.settings.get(source, name, fallback=default))
         else:
             return self.settings.get(source, name, fallback=default)
+
+    def persistent_session(self, node: str, persist: bool | None = None) -> bool:
+        # Return current session state for node: state = self.persistent_session(node)
+        # Or set persistent session: self.persistent_session(node, True)
+        # Or end persistent session: self.persistent_session(node, False)
+        # Time out sessions after 15 minutes
+        if persist is not None:
+            if persist:
+                self.session_persist[node] = int(datetime.now().timestamp())
+            else:
+                self.session_persist[node] = 0
+        return int(datetime.now().timestamp()) - self.session_persist.get(node, 0) < 900

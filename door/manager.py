@@ -23,6 +23,7 @@ class DoorManager:
         self.default_command = dict(self.settings.items("global")).get(
             "default_command", "help"
         )
+        self.previous_command = {}  # save command name here for persistent sessions
 
         # keep track of the commands added, don't let duplicates happen
         self.commands = []
@@ -119,12 +120,42 @@ class DoorManager:
         node = packet["fromId"]
         msg: str = packet["decoded"]["payload"].decode("utf-8")
         response = None
+        command = msg.lower().split()[0]
 
         log.info(f"RX {node} ({len(msg):>3}): {msg}")
 
         # skip if responses are disabled globally
         if self.settings.getboolean("global", "disable_all_responses", fallback=False):
             log.debug("Not responding.")
+            return
+
+        # Check for ongoing session with previous command
+        # If we have a persistent session, the user does not have to
+        # keep typing the command at the beginning of every msg
+        if self.previous_command.get(node, False):
+            # We found the previous command from this node
+            # Let's check the session state in the command handler
+            handler = self.get_command_handler(self.previous_command[node])
+            if handler:
+                # Handler found, check for persistent session
+                if handler.persistent_session(node):
+                    try:
+                        response = handler.invoke(msg, node)
+                    except CommandRunError:
+                        response = f"Command to '{handler.command}' failed."
+                else:
+                    # No persistent session. Remember the current command
+                    self.previous_command[node] = command
+            else:
+                # No handler for previous command. Remember the current command
+                self.previous_command[node] = command
+        else:
+            # No previous command for this node. Remember this command for later
+            self.previous_command[node] = command
+
+        if response:
+            # Got response from persistent session. Send it!
+            pub.sendMessage(self.dm_topic, message=response, node=node)
             return
 
         # show help for commands
