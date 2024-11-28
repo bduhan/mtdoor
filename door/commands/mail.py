@@ -9,10 +9,10 @@ from loguru import logger as log
 import re
 import sqlite3
 import os
+import time
 from datetime import datetime, timedelta
 import uuid
 import pytz
-
 
 class Mail(BaseCommand):
     command = "mail"
@@ -24,11 +24,14 @@ class Mail(BaseCommand):
     help += "[parameters] are optional"
 
     def load(self):
+        self.interface.getNode('^local').setTime()
         data_dir = self.get_setting(str, "data_dir", "./data")
         self.db = f"{data_dir}/mail.db"
         self.initialize_database()
         self.state = {}
         self.inputs = []
+
+
 
     def invoke(self, msg: str, node: str) -> str:
         if not self.state.get(node, None):
@@ -254,7 +257,9 @@ class Mail(BaseCommand):
             log.debug(f"recipient: {recipient} mail_id: {mail_id}")
             node = self.interface.nodes.get(recipient, None)
             if node:
-                lastHeard = node.get("lastHeard", 999)
+                lastHeard = node.get("lastHeard", None)
+                if lastHeard is None:
+                    continue
                 lh = f"{datetime.fromtimestamp(lastHeard, self.local_tz).strftime('%Y-%m-%d %H:%M:%S')}"
                 log.debug(f"{datetime.now() - datetime.fromtimestamp(lastHeard)} ago")
                 if datetime.now() - datetime.fromtimestamp(lastHeard) < timedelta(
@@ -269,7 +274,8 @@ class Mail(BaseCommand):
         conn = self.get_db_connection()
         c = conn.cursor()
         c.execute(
-            f"UPDATE mail SET notify = 0 WHERE recipient = {recipient} AND id <= {mail_id} AND notify = 1;"
+            f"UPDATE mail SET notify = 0 WHERE recipient = ? AND id <= ? AND notify = 1;",
+            (recipient, mail_id)
         )
         conn.commit()
 
