@@ -186,7 +186,7 @@ class Mail(BaseCommand):
                         prefix = "re: "
                     self.state[node][
                         "subject"
-                    ] = f"{prefix}{self.state[node]["reply_subject"]}"
+                    ] = f"{prefix}{self.state[node]['reply_subject']}"
                 elif self.inputs:
                     self.state[node]["subject"] = " ".join(self.inputs)
                     self.inputs = []
