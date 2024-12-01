@@ -99,6 +99,10 @@ class BaseCommand:
         """
         module = getmodule(self).__name__
 
+        # In case command is in a subdirectory
+        if module not in self.settings.sections():
+            module = module.rsplit('.', 1)[0]
+
         # where should we get this setting from?
         source = None
         if self.settings.has_option(module, name):
