@@ -205,7 +205,7 @@ class Weather(BaseCommand):
         reply = ""
         if "alerts" in msg.lower():
             reply = self.alerts(latitude, longitude)
-        if "obs" in msg.lower():
+        elif "obs" in msg.lower():
             reply = self.observations(latitude, longitude)
         else:
             reply = self.forecast(latitude, longitude)
